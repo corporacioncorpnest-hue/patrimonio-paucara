@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bienes · Patrimonio Paucará</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/sidebar.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="app">
+    <aside class="glass sidebar">
+    <div class="sidebar-marca">
+      <div class="logo-mini-wrap">
+        <div class="logo-mini-anillo a1"></div>
+        <div class="logo-mini-anillo a2"></div>
+        <div class="logo-mini-particula p1"></div>
+        <div class="logo-mini-particula p2"></div>
+        <div class="logo-mini-halo"></div>
+        <div class="logo-mini-central">
+          <img src="img/logo.png" alt="Micro Red Paucará"
+               onerror="this.style.display='none'; this.parentElement.classList.add('sin-logo');">
+          <div class="logo-mini-fallback">✚</div>
+        </div>
+      </div>
+      <h2 class="sidebar-titulo">Patrimonio</h2>
+    </div>
+
+    <a href="dashboard.html" class="sidebar-dashboard">
+      <span>📊</span>
+      <span>Dashboard</span>
+    </a>
+
+    <div class="sidebar-modulo abierto" data-modulo="patrimonio">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">🏛️</span>
+        <span class="modulo-titulo">Patrimonio</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="bienes.html" class="active">🏷️ Bienes</a>
+        <a href="actas.html">📄 Actas</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="almacen">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">📦</span>
+        <span class="modulo-titulo">Almacén</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="catalogo-suministros.html">📋 Catálogo de Suministros</a>
+        <a href="ingresos.html">📥 Ingresos</a>
+        <a href="salidas.html">📤 Salidas</a>
+        <a href="stock.html">📊 Stock</a>
+        <a href="kardex.html">🗂️ Kardex</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="configuracion">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">⚙️</span>
+        <span class="modulo-titulo">Configuración</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="establecimientos.html">🏥 Establecimientos</a>
+        <a href="profesionales.html">👥 Profesionales</a>
+        <a href="encargados.html">🧑‍💼 Responsables</a>
+        <a href="usuarios.html">👤 Usuarios</a>
+        <a href="reportes.html">📈 Reportes</a>
+      </div>
+    </div>
+
+    <a href="#" id="logout" style="margin-top:auto;">🚪 Salir</a>
+  </aside>
+
+  <main class="main">
+    <div class="glass topbar">
+      <h1>Inventario 2026</h1>
+      <span class="user">👤 <span class="user-nombre"></span></span>
+    </div>
+
+    <div class="glass panel" style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+      <input id="q" placeholder="🔍 Buscar en cualquier campo de la tabla..."
+             style="flex:1;min-width:220px;padding:.55rem .8rem;border:1px solid #cbd5e1;border-radius:8px;" />
+      <select id="fEstado" style="padding:.55rem .8rem;border:1px solid #cbd5e1;border-radius:8px;">
+        <option value="">Todos los estados</option>
+      </select>
+      <button class="btn btn-primary" id="btnNuevo">+ Nuevo bien</button>
+      <button class="btn" id="btnImportar" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; box-shadow: 0 6px 20px rgba(124,58,237,.4);">
+        📥 Importar Excel
+      </button>
+      <button class="btn btn-secondary" id="btnExport">⬇ Exportar Excel</button>
+    </div>
+
+    <div class="glass tabla-wrap">
+      <table class="inventario" style="min-width:auto;">
+        <thead>
+          <tr>
+            <th style="width:50px;">N°</th>
+            <th>Estado</th>
+            <th>Descripción</th>
+            <th>Código Interno</th>
+            <th>Cód. Patrimonio</th>
+            <th>Marca / Modelo</th>
+            <th>Ubicación</th>
+            <th>Condición</th>
+            <th>Encargado</th>
+            <th style="width:170px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="paginacion" id="paginacion"></div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL IMPORTAR EXCEL -->
+<template id="tplImportar">
+  <div class="modal-backdrop">
+    <div class="glass modal" id="modalImport" style="max-width:900px;">
+      <button type="button" class="btn-close-modal" data-close title="Cerrar">✕</button>
+      <h2>📥 Importar Bienes desde Excel</h2>
+      <div class="import-info">
+        El archivo Excel debe tener las siguientes columnas (pueden estar en cualquier orden):
+        <div class="import-columnas">
+          <span>N°</span><span>Inv. 2026</span><span>Cod. Patrimonial</span>
+          <span>CÓDIGO INTERNO</span><span>Descripción</span><span>Establecimiento</span>
+          <span>Usuario</span><span>Ubicación Física</span><span>Modelo</span>
+          <span>Medidas</span><span>Marca</span><span>Estado</span>
+          <span>Serie</span><span>Color</span><span>Características</span>
+          <span>F.INGRESO</span><span>Fecha de mantenimiento</span><span>Tiempo de mantenimiento</span>
+          <span>Observaciones</span>
+        </div>
+      </div>
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">📊</div>
+        <div class="drop-titulo">Arrastra tu archivo Excel aquí</div>
+        <div class="drop-sub">o</div>
+        <button type="button" class="btn btn-primary" id="btnSeleccionar">Seleccionar archivo</button>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;" />
+        <small class="drop-hint">Formatos soportados: .xlsx, .xls</small>
+      </div>
+      <div id="previewWrap" style="display:none;">
+        <div class="preview-header">
+          <div>
+            <strong id="previewNombre"></strong>
+            <span id="previewCount"></span>
+          </div>
+          <button type="button" class="btn btn-ghost" id="btnCambiarArchivo" style="color:#1f2a37;">Cambiar archivo</button>
+        </div>
+        <div class="preview-tabla-wrap">
+          <table class="preview-tabla" id="previewTabla"></table>
+        </div>
+      </div>
+      <div id="resultadoWrap" style="display:none;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close style="color:#1f2a37;">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnConfirmarImport" disabled>
+          ✅ Confirmar Importación
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- MODAL NUEVO/EDITAR -->
+<template id="tplModal">
+  <div class="modal-backdrop">
+    <form class="glass modal" id="formBien">
+      <button type="button" class="btn-close-modal" data-close title="Cerrar">✕</button>
+      <h2 id="titulo">Nuevo bien patrimonial</h2>
+      <div class="grid-3">
+        <div>
+          <label>N° (automático)</label>
+          <input name="nro" id="inpNro" readonly
+                 style="background:#f1f5f9;color:#64748b;cursor:not-allowed;font-weight:700;text-align:center;" />
+        </div>
+        <div>
+          <label>Estado *</label>
+          <select name="inventario_2026" id="selEstadoBien" required></select>
+        </div>
+        <div>
+          <label id="lblCodPatrimonio">Cod. Patrimonio</label>
+          <input name="codigo_patrimonio" id="inpCodPatrimonio" maxlength="20" />
+          <small id="avisoCodPatrimonio"
+                 style="font-size:.7rem;color:#94a3b8;margin-top:.25rem;display:none;">
+            No aplica para bienes SOBRANTES.
+          </small>
+        </div>
+        <div>
+          <label>Código interno</label>
+          <input name="codigo_interno" />
+        </div>
+        <div class="grid-full">
+          <label>Descripción *</label>
+          <input name="descripcion" required minlength="3" placeholder="Ej: LAPICERO, IMPRESORA..." />
+        </div>
+        <div>
+          <label id="lblEstablecimiento">Establecimiento *</label>
+          <select name="establecimiento_id" id="selEst" required></select>
+          <small id="avisoEstablecimiento"
+                 style="font-size:.7rem;color:#94a3b8;margin-top:.25rem;display:none;">
+            Asignado automáticamente según tu usuario.
+          </small>
+        </div>
+        <div>
+          <label>Usuario / Encargado *</label>
+          <select name="usuario_id" id="selUsu" required></select>
+        </div>
+        <div>
+          <label>Ubicación física *</label>
+          <select name="ubicacion_id" id="selUbi" required></select>
+        </div>
+        <div>
+          <label>Modelo</label>
+          <input name="modelo" id="modeloTxt" placeholder="Ej: LCR15-4.5%" />
+        </div>
+        <div>
+          <label>Medida</label>
+          <input name="medida" placeholder="Ej: SIN MEDIDA" />
+        </div>
+        <div>
+          <label>Marca</label>
+          <input name="marca" id="marcaTxt" placeholder="Ej: ELISE" />
+        </div>
+        <div>
+          <label>Condición *</label>
+          <select name="estado_id" id="selCondicion" required></select>
+        </div>
+        <div>
+          <label>Serie</label>
+          <input name="serie" />
+        </div>
+        <div>
+          <label>Color</label>
+          <input name="color" />
+        </div>
+        <div class="grid-full">
+          <label>Características</label>
+          <textarea name="caracteristicas"></textarea>
+        </div>
+        <div>
+          <label>Fecha mantenimiento</label>
+          <input name="fecha_mantenimiento" type="date" />
+        </div>
+        <div>
+          <label>Tiempo mantenimiento</label>
+          <input name="tiempo_mantenimiento" placeholder="Ej: 6 meses" />
+        </div>
+        <div class="grid-full">
+          <label>Observaciones</label>
+          <textarea name="observaciones"></textarea>
+        </div>
+      </div>
+      <p style="font-size:.78rem;color:#64748b;margin-top:.8rem;">
+        Los campos marcados con <strong style="color:#c0392b;">*</strong> son obligatorios.
+      </p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close style="color:#1f2a37;">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<!-- MODAL DETALLE -->
+<template id="tplDetalle">
+  <div class="modal-backdrop">
+    <div class="glass modal modal-detalle" style="max-width:820px;">
+      <button type="button" class="btn-close-modal" data-close title="Cerrar">✕</button>
+      <div class="detalle-header">
+        <div>
+          <h2 style="margin:0;">Detalle del bien</h2>
+          <p style="opacity:.7;font-size:.85rem;margin-top:.25rem;" id="detSubtitulo"></p>
+        </div>
+      </div>
+      <div class="detalle-grid" id="detGrid"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close>Cerrar</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- MODAL HISTORIAL -->
+<template id="tplHistorial">
+  <div class="modal-backdrop">
+    <div class="glass modal modal-historial" style="max-width:780px;">
+      <button type="button" class="btn-close-modal" data-close title="Cerrar">✕</button>
+      <div class="detalle-header">
+        <div>
+          <h2 style="margin:0;">Historial de movimientos</h2>
+          <p style="opacity:.7;font-size:.85rem;margin-top:.25rem;" id="histSubtitulo"></p>
+        </div>
+      </div>
+      <div id="histContenido"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close>Cerrar</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style>
+  .modal-detalle, .modal-historial { padding: 1.5rem 2rem 1.5rem; }
+  .detalle-header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: .8rem; margin-bottom: 1rem; padding-right: 50px; }
+  .detalle-header h2 { font-family: 'Playfair Display', serif; color: #1f2a37; }
+  .detalle-grid { display: grid; grid-template-columns: 200px 1fr; gap: .5rem 1rem; font-size: .9rem; }
+  .detalle-grid .k { font-weight: 700; color: #475569; padding: .45rem 0; border-bottom: 1px dashed #e2e8f0; }
+  .detalle-grid .v { color: #1f2a37; padding: .45rem 0; border-bottom: 1px dashed #e2e8f0; word-break: break-word; }
+  .timeline { position: relative; padding-left: 30px; }
+  .timeline::before { content: ''; position: absolute; left: 12px; top: 6px; bottom: 6px; width: 3px; background: linear-gradient(180deg, #60a5fa, #1d6fb3); border-radius: 3px; }
+  .timeline-item { position: relative; margin-bottom: 1.1rem; padding: .9rem 1rem; background: #f8fafc; border-left: 4px solid #1d6fb3; border-radius: 10px; }
+  .timeline-item.tipo-CREACION { border-left-color: #16a34a; }
+  .timeline-item.tipo-TRASLADO { border-left-color: #ea580c; }
+  .timeline-item.tipo-BAJA     { border-left-color: #dc2626; }
+  .timeline-item.tipo-EDICION  { border-left-color: #64748b; }
+  .timeline-fecha { font-size: .78rem; color: #64748b; font-weight: 600; margin-bottom: .35rem; display: flex; align-items: center; gap: .5rem; }
+  .timeline-tipo { display: inline-block; font-size: .68rem; padding: .15rem .55rem; border-radius: 999px; font-weight: 700; letter-spacing: .5px; color: #fff; }
+  .timeline-tipo.CREACION { background: #16a34a; }
+  .timeline-tipo.TRASLADO { background: #ea580c; }
+  .timeline-tipo.BAJA { background: #dc2626; }
+  .timeline-tipo.EDICION { background: #64748b; }
+  .timeline-body { font-size: .88rem; color: #1f2a37; line-height: 1.55; }
+  .timeline-body strong { color: #1d6fb3; }
+  .timeline-body .hist-estado { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .72rem; font-weight: 700; color: #fff; margin-left: .3rem; }
+  .hist-vacio { text-align: center; color: #64748b; padding: 2rem 1rem; font-size: .92rem; }
+  .hist-bien-info { background: #eff6ff; border-left: 4px solid #1d6fb3; padding: .75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: .88rem; color: #1e3a8a; }
+  .paginacion { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .8rem; padding: .9rem 1rem .3rem; border-top: 1px solid #e2e8f0; margin-top: .8rem; }
+  .paginacion .info { font-size: .85rem; color: #475569; }
+  .paginacion .controles { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
+  .paginacion button { padding: .4rem .75rem; border: 1px solid #cbd5e1; background: #fff; color: #1f2a37; border-radius: 8px; font-size: .85rem; cursor: pointer; transition: all .15s; }
+  .paginacion button:hover:not(:disabled) { background: #1d6fb3; color: #fff; border-color: #1d6fb3; }
+  .paginacion button:disabled { opacity: .4; cursor: not-allowed; }
+  .paginacion button.activo { background: #1d6fb3; color: #fff; border-color: #1d6fb3; font-weight: 700; }
+  .row-actions button { background: rgba(29,111,179,.12); border: none; padding: .35rem .55rem; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: all .15s; }
+  .row-actions button:hover { transform: translateY(-1px); }
+  .row-actions .ver   { background: rgba(59,130,246,.15); }
+  .row-actions .edit  { background: rgba(34,197,94,.15); }
+  .row-actions .hist  { background: rgba(168,85,247,.15); }
+  .row-actions .baja  { background: rgba(239,68,68,.15); }
+  input:disabled, select:disabled { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; }
+  .import-info { background: #eff6ff; border-left: 4px solid #1d6fb3; padding: .85rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: .85rem; color: #1e3a8a; }
+  .import-columnas { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+  .import-columnas span { background: #dbeafe; color: #1d4ed8; padding: .2rem .55rem; border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .2px; }
+  .drop-zone { border: 3px dashed #cbd5e1; border-radius: 16px; padding: 2.5rem 1.5rem; text-align: center; background: #f8fafc; transition: all .25s; cursor: pointer; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: #7c3aed; background: #f5f3ff; transform: scale(1.01); }
+  .drop-icon { font-size: 3.5rem; margin-bottom: .6rem; }
+  .drop-titulo { font-size: 1.05rem; font-weight: 700; color: #1f2a37; margin-bottom: .3rem; }
+  .drop-sub { color: #94a3b8; margin: .5rem 0; font-size: .85rem; }
+  .drop-hint { display: block; margin-top: 1rem; color: #94a3b8; font-size: .78rem; }
+  .preview-header { display: flex; justify-content: space-between; align-items: center; padding: .8rem 0; border-top: 1px solid #e2e8f0; margin-top: 1rem; font-size: .88rem; color: #1f2a37; }
+  .preview-count { margin-left: .5rem; color: #1d6fb3; font-weight: 700; }
+  .preview-tabla-wrap { max-height: 300px; overflow: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+  .preview-tabla { width: 100%; border-collapse: collapse; font-size: .72rem; color: #1f2a37; }
+  .preview-tabla th { background: linear-gradient(180deg, #1d6fb3, #155a94); color: #fff; padding: .45rem .5rem; text-align: left; font-weight: 700; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+  .preview-tabla td { padding: .4rem .5rem; border-bottom: 1px solid #e2e8f0; white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  .preview-tabla tbody tr:hover { background: #eff6ff; }
+  #resultadoWrap { margin-top: 1.2rem; padding: 1rem 1.2rem; border-radius: 12px; font-size: .88rem; }
+  .result-ok { background: #dcfce7; border-left: 5px solid #16a34a; color: #166534; }
+  .result-warn { background: #fef3c7; border-left: 5px solid #d97706; color: #92400e; }
+  .result-error { background: #fee2e2; border-left: 5px solid #dc2626; color: #991b1b; }
+  .result-ok h3, .result-warn h3, .result-error h3 { margin-bottom: .5rem; font-size: 1rem; }
+  .result-list { margin-top: .6rem; max-height: 150px; overflow-y: auto; font-size: .78rem; }
+  .result-list .err { padding: .2rem .5rem; border-bottom: 1px solid rgba(0,0,0,.05); }
+  @media (max-width: 640px) {
+    .detalle-grid { grid-template-columns: 1fr; }
+    .detalle-grid .k { border-bottom: none; padding-bottom: 0; }
+  }
+</style>
+
+<script type="module">
+  import { api, protegerPagina, logout, escapeHtml } from './js/api.js';
+  import UI from './js/ui.js';
+
+  const USUARIO = await protegerPagina();
+  logout();
+
+  function activarCierreModal(modalEl) {
+    modalEl.querySelectorAll('[data-close]').forEach(btn =>
+      btn.addEventListener('click', () => modalEl.remove()));
+    modalEl.addEventListener('click', e => { if (e.target === modalEl) e.stopPropagation(); });
+    const onEsc = e => {
+      if (e.key === 'Escape') { modalEl.remove(); document.removeEventListener('keydown', onEsc); }
+    };
+    document.addEventListener('keydown', onEsc);
+  }
+
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
+  const DIAS  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+  function fechaHoyArchivo() {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2,'0')}_${MESES[d.getMonth()]}_${d.getFullYear()}`;
+  }
+  function fechaHoraLarga() {
+    const d = new Date();
+    return `${DIAS[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')} de ${MESES[d.getMonth()]} de ${d.getFullYear()} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  let catalogos = {};
+  let bienes = [];
+  let bienesFiltrados = [];
+  let paginaActual = 1;
+  const POR_PAGINA = 5;
+  let editandoId = null;
+
+  const MAPA_COLUMNAS = {
+    nro:                   ['N°', 'N', 'NUM', 'NUMERO', 'NRO'],
+    inventario_2026:       ['Inv. 2026', 'INV. 2026', 'INV 2026', 'INVENTARIO 2026', 'INVENTARIO'],
+    codigo_patrimonio:     ['Cod. Patrimonial', 'COD. PATRIMONIAL', 'CODIGO PATRIMONIAL', 'COD PATRIMONIO', 'COD. PATRIMONIO'],
+    codigo_interno:        ['CÓDIGO INTERNO', 'CODIGO INTERNO', 'COD. INTERNO', 'COD INTERNO'],
+    descripcion:           ['Descripción', 'DESCRIPCION', 'DESCRIPCIÓN', 'DESC'],
+    establecimiento:       ['Establecimiento', 'ESTABLECIMIENTO', 'CENTRO', 'PUESTO'],
+    usuario:               ['Usuario', 'USUARIO', 'ENCARGADO', 'RESPONSABLE'],
+    ubicacion:             ['Ubicación Fisica', 'Ubicación Física', 'UBICACION FISICA', 'UBICACIÓN FÍSICA', 'UBICACION', 'UBICACIÓN'],
+    modelo:                ['Modelo', 'MODELO'],
+    medida:                ['Medidas', 'Medida', 'MEDIDAS', 'MEDIDA'],
+    marca:                 ['Marca', 'MARCA'],
+    condicion:             ['Estado', 'ESTADO', 'CONDICION', 'CONDICIÓN'],
+    serie:                 ['Serie', 'SERIE'],
+    color:                 ['Color', 'COLOR'],
+    caracteristicas:       ['características', 'Características', 'CARACTERISTICAS', 'CARACTERÍSTICAS'],
+    fecha_ingreso:         ['F.INGRESO', 'F. INGRESO', 'FECHA INGRESO'],
+    fecha_mantenimiento:   ['fecha de mantenimiento', 'Fecha de mantenimiento', 'FECHA DE MANTENIMIENTO', 'F.MANTENIMIENTO', 'F. MANTENIMIENTO'],
+    tiempo_mantenimiento:  ['tiempo de mantenimiento', 'Tiempo de mantenimiento', 'TIEMPO DE MANTENIMIENTO', 'TIEMPO MANTENIMIENTO'],
+    observaciones:         ['observaciones', 'Observaciones', 'OBSERVACIONES', 'OBS']
+  };
+
+  function normalizar(str) {
+    return String(str || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .trim()
+      .replace(/\s+/g, ' ');
+  }
+
+  function normalizarTexto(txt) {
+    return String(txt || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function mapearFilas(filas) {
+    if (!filas || filas.length === 0) return [];
+    const claves = Object.keys(filas[0]);
+    const mapaEncontrado = {};
+    for (const [campo, variantes] of Object.entries(MAPA_COLUMNAS)) {
+      for (const variante of variantes) {
+        const encontrada = claves.find(c => normalizar(c) === normalizar(variante));
+        if (encontrada) { mapaEncontrado[campo] = encontrada; break; }
+      }
+    }
+    return filas.map(fila => {
+      const resultado = {};
+      for (const [campo, colOriginal] of Object.entries(mapaEncontrado)) {
+        resultado[campo] = fila[colOriginal];
+      }
+      return resultado;
+    });
+  }
+
+  async function cargarCatalogos() {
+    catalogos = await api('/api/catalogos');
+    fillSel('selEstadoBien', catalogos.tipos, 'id', 'nombre', false);
+    fillSel('selCondicion',  catalogos.estados, 'id', 'nombre', false);
+    fillSel('selUbi',        catalogos.ubicaciones, 'id', 'nombre', false);
+
+    const fEst = document.getElementById('fEstado');
+    fEst.innerHTML = '<option value="">Todos los estados</option>';
+    catalogos.tipos.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.id;
+      o.textContent = t.nombre;
+      fEst.appendChild(o);
+    });
+  }
+
+  function fillSel(id, arr, valKey, txtKey, opcional = true) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = opcional ? '<option value="">—</option>' : '';
+    arr.forEach(x => {
+      const o = document.createElement('option');
+      o.value = x[valKey];
+      o.textContent = x[txtKey];
+      sel.appendChild(o);
+    });
+  }
+
+  function fillSel2(sel, arr, selected, opcional = true) {
+    sel.innerHTML = opcional ? '<option value="">—</option>' : '';
+    arr.forEach(x => {
+      const o = document.createElement('option');
+      o.value = x.id;
+      o.textContent = x.nombre;
+      if (selected == x.id) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+
+  async function cargarProfesionalesEn(selectEl, selectedId) {
+    const pro = await api('/api/profesionales');
+    selectEl.innerHTML = '<option value="">—</option>';
+    pro.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = `${p.nombres} ${p.apellidos} (${p.profesion})`;
+      if (selectedId === p.id) o.selected = true;
+      selectEl.appendChild(o);
+    });
+  }
+
+  function aplicarReglaCodPatrimonio(selEstadoBien, inpCodPatrimonio, avisoEl, valorActual = '') {
+    const tipoSeleccionado = catalogos.tipos.find(t => String(t.id) === String(selEstadoBien.value));
+    const esSobrante = tipoSeleccionado && tipoSeleccionado.nombre.toUpperCase() === 'SOBRANTE';
+    if (esSobrante) {
+      inpCodPatrimonio.disabled = true;
+      inpCodPatrimonio.value = '';
+      inpCodPatrimonio.placeholder = 'No aplica (SOBRANTE)';
+      if (avisoEl) avisoEl.style.display = 'block';
+    } else {
+      inpCodPatrimonio.disabled = false;
+      inpCodPatrimonio.placeholder = '';
+      if (avisoEl) avisoEl.style.display = 'none';
+      if (valorActual && !inpCodPatrimonio.value) inpCodPatrimonio.value = valorActual;
+    }
+  }
+
+  function aplicarReglaEstablecimiento(selEst, avisoEl) {
+    const esAdminGlobal = USUARIO.rol === 'admin' && !USUARIO.establecimiento_id;
+    if (esAdminGlobal) {
+      selEst.disabled = false;
+      if (avisoEl) { avisoEl.textContent = '👑 Admin global: puedes elegir cualquier establecimiento.'; avisoEl.style.display = 'block'; avisoEl.style.color = '#7c3aed'; }
+    } else if (USUARIO.establecimiento_id) {
+      selEst.value = USUARIO.establecimiento_id;
+      selEst.disabled = true;
+      if (avisoEl) { avisoEl.textContent = `🔒 Asignado: ${USUARIO.establecimiento_nombre || 'tu establecimiento'}`; avisoEl.style.display = 'block'; avisoEl.style.color = '#1d6fb3'; }
+    } else {
+      selEst.disabled = true;
+      if (avisoEl) { avisoEl.textContent = '⚠️ Sin establecimiento asignado.'; avisoEl.style.display = 'block'; avisoEl.style.color = '#c0392b'; }
+    }
+  }
+
+  async function cargar() {
+    bienes = await api('/api/bienes');
+    aplicarFiltros();
+  }
+
+  function aplicarFiltros() {
+    const qRaw = document.getElementById('q').value.trim();
+    const q = normalizarTexto(qRaw);
+    const fEst = document.getElementById('fEstado').value;
+
+    bienesFiltrados = bienes.filter(b => {
+      if (fEst && String(b.inventario_2026) !== String(fEst)) return false;
+      if (!q) return true;
+      return (
+        normalizarTexto(b.nro).includes(q) ||
+        normalizarTexto(b.inventario_2026).includes(q) ||
+        normalizarTexto(b.codigo_patrimonio).includes(q) ||
+        normalizarTexto(b.codigo_interno).includes(q) ||
+        normalizarTexto(b.descripcion).includes(q) ||
+        normalizarTexto(b.establecimiento).includes(q) ||
+        normalizarTexto(b.encargado).includes(q) ||
+        normalizarTexto(b.ubicacion).includes(q) ||
+        normalizarTexto(b.marca).includes(q) ||
+        normalizarTexto(b.modelo).includes(q) ||
+        normalizarTexto(b.medida).includes(q) ||
+        normalizarTexto(b.estado).includes(q) ||
+        normalizarTexto(b.serie).includes(q) ||
+        normalizarTexto(b.color).includes(q) ||
+        normalizarTexto(b.caracteristicas).includes(q) ||
+        normalizarTexto(b.fecha_mantenimiento).includes(q) ||
+        normalizarTexto(b.tiempo_mantenimiento).includes(q) ||
+        normalizarTexto(b.observaciones).includes(q)
+      );
+    });
+
+    paginaActual = 1;
+    render();
+  }
+
+  function render() {
+    const tb = document.getElementById('tbody');
+    tb.innerHTML = '';
+    const totalPaginas = Math.max(1, Math.ceil(bienesFiltrados.length / POR_PAGINA));
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    const inicio = (paginaActual - 1) * POR_PAGINA;
+    const fin = inicio + POR_PAGINA;
+    const pagina = bienesFiltrados.slice(inicio, fin);
+
+    if (pagina.length === 0) {
+      tb.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:1.5rem;color:#64748b;">No se encontraron bienes.</td></tr>`;
+    } else {
+      pagina.forEach(b => {
+        const estadoTxt = b.inventario_2026 || '—';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${b.nro ?? ''}</td>
+          <td><span class="badge" style="background:#1d6fb3;">${escapeHtml(estadoTxt)}</span></td>
+          <td>${escapeHtml(b.descripcion)}</td>
+          <td>${escapeHtml(b.codigo_interno || '—')}</td>
+          <td>${escapeHtml(b.codigo_patrimonio || '—')}</td>
+          <td>${escapeHtml(b.marca || '—')} <small style="opacity:.6;">${escapeHtml(b.modelo || '')}</small></td>
+          <td>${escapeHtml(b.ubicacion || '—')}</td>
+          <td><span class="badge" style="background:${b.estado_color || '#6b7280'};">${escapeHtml(b.estado || '—')}</span></td>
+          <td>${escapeHtml(b.encargado || '—')}</td>
+          <td class="row-actions" style="display:flex;gap:.3rem;">
+            <button class="ver" data-id="${b.id}" title="Ver detalle">👁️</button>
+            <button class="edit" data-id="${b.id}" title="Editar">✏️</button>
+            <button class="hist" data-id="${b.id}" title="Ver historial">🕒</button>
+            <button class="baja" data-id="${b.id}" title="Dar de baja">⛔</button>
+          </td>
+        `;
+        tb.appendChild(tr);
+      });
+    }
+
+    tb.querySelectorAll('.ver').forEach(btn => btn.addEventListener('click', () => verDetalle(bienes.find(x => x.id == btn.dataset.id))));
+    tb.querySelectorAll('.edit').forEach(btn => btn.addEventListener('click', () => abrirModalEditar(bienes.find(x => x.id == btn.dataset.id))));
+    tb.querySelectorAll('.hist').forEach(btn => btn.addEventListener('click', () => verHistorial(bienes.find(x => x.id == btn.dataset.id))));
+    tb.querySelectorAll('.baja').forEach(btn => btn.addEventListener('click', () => darDeBaja(bienes.find(x => x.id == btn.dataset.id))));
+
+    renderPaginacion(totalPaginas, inicio, fin);
+  }
+
+  function renderPaginacion(totalPaginas, inicio, fin) {
+    const cont = document.getElementById('paginacion');
+    const total = bienesFiltrados.length;
+    const mostrados = Math.min(fin, total);
+
+    let html = `<div class="info">Mostrando <strong>${total === 0 ? 0 : inicio + 1}</strong>–<strong>${mostrados}</strong> de <strong>${total}</strong> bienes</div>`;
+    html += `<div class="controles">`;
+    html += `<button ${paginaActual === 1 ? 'disabled' : ''} data-p="1">« Primera</button>`;
+    html += `<button ${paginaActual === 1 ? 'disabled' : ''} data-p="${paginaActual - 1}">‹ Anterior</button>`;
+    for (let i = 1; i <= totalPaginas; i++) {
+      if (i === 1 || i === totalPaginas || Math.abs(i - paginaActual) <= 1) {
+        html += `<button class="${i === paginaActual ? 'activo' : ''}" data-p="${i}">${i}</button>`;
+      } else if (i === 2 && paginaActual > 3) {
+        html += `<span style="padding:.4rem .3rem;color:#64748b;">…</span>`;
+      } else if (i === totalPaginas - 1 && paginaActual < totalPaginas - 2) {
+        html += `<span style="padding:.4rem .3rem;color:#64748b;">…</span>`;
+      }
+    }
+    html += `<button ${paginaActual === totalPaginas ? 'disabled' : ''} data-p="${paginaActual + 1}">Siguiente ›</button>`;
+    html += `<button ${paginaActual === totalPaginas ? 'disabled' : ''} data-p="${totalPaginas}">Última »</button>`;
+    html += `</div>`;
+
+    cont.innerHTML = html;
+    cont.querySelectorAll('button[data-p]').forEach(btn =>
+      btn.addEventListener('click', () => {
+        const p = Number(btn.dataset.p);
+        if (p >= 1 && p <= totalPaginas && p !== paginaActual) {
+          paginaActual = p;
+          render();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }));
+  }
+
+  function verDetalle(b) {
+    if (!b) return;
+    const tpl = document.getElementById('tplDetalle').content.cloneNode(true);
+    document.body.appendChild(tpl);
+    const modal = document.body.lastElementChild;
+
+    document.getElementById('detSubtitulo').textContent =
+      `${b.codigo_interno || 'Sin código'} · ${b.marca || ''} ${b.modelo || ''}`.trim();
+
+    const campos = [
+      ['N°', b.nro], ['Estado', b.inventario_2026], ['Código Patrimonio', b.codigo_patrimonio],
+      ['Código Interno', b.codigo_interno], ['Descripción', b.descripcion],
+      ['Establecimiento', b.establecimiento], ['Usuario / Encargado', b.encargado],
+      ['Ubicación Física', b.ubicacion], ['Modelo', b.modelo], ['Marca', b.marca],
+      ['Medida', b.medida], ['Condición', b.estado], ['Serie', b.serie], ['Color', b.color],
+      ['Características', b.caracteristicas], ['Fecha Mantenimiento', b.fecha_mantenimiento],
+      ['Tiempo Mantenimiento', b.tiempo_mantenimiento], ['Observaciones', b.observaciones],
+      ['Creado', b.creado_en], ['Última actualización', b.actualizado_en]
+    ];
+
+    document.getElementById('detGrid').innerHTML = campos.map(([k, v]) => `
+      <div class="k">${escapeHtml(k)}</div>
+      <div class="v">${escapeHtml(v ?? '—') || '—'}</div>
+    `).join('');
+
+    activarCierreModal(modal);
+  }
+
+  async function verHistorial(b) {
+    if (!b) return;
+    const tpl = document.getElementById('tplHistorial').content.cloneNode(true);
+    document.body.appendChild(tpl);
+    const modal = document.body.lastElementChild;
+
+    document.getElementById('histSubtitulo').textContent = `${b.nro ?? ''} · ${b.descripcion}`;
+    const cont = document.getElementById('histContenido');
+    cont.innerHTML = '<div class="hist-vacio">⏳ Cargando historial...</div>';
+
+    try {
+      const { bien, movimientos } = await api(`/api/bienes/${b.id}/historial`);
+      let html = `
+        <div class="hist-bien-info">
+          <strong>Bien:</strong> ${escapeHtml(bien.descripcion)}<br>
+          <strong>Código:</strong> ${escapeHtml(bien.codigo_interno || '—')} ·
+          <strong>Serie:</strong> ${escapeHtml(bien.serie || '—')} ·
+          <strong>Marca:</strong> ${escapeHtml(bien.marca || '—')}
+        </div>
+      `;
+
+      if (!movimientos || movimientos.length === 0) {
+        html += `<div class="hist-vacio">ℹ️ Este bien aún no tiene movimientos registrados.</div>`;
+      } else {
+        html += '<div class="timeline">';
+        movimientos.forEach(m => {
+          const tipo = m.tipo_evento || 'EDICION';
+          const receptor = m.receptor
+            ? `${escapeHtml(m.receptor)}${m.receptor_profesion ? ' · ' + escapeHtml(m.receptor_profesion) : ''}`
+            : '<em style="opacity:.6;">Sin receptor</em>';
+          const estado = m.estado ? `<span class="hist-estado" style="background:${m.estado_color || '#6b7280'};">${escapeHtml(m.estado)}</span>` : '';
+          html += `
+            <div class="timeline-item tipo-${escapeHtml(tipo)}">
+              <div class="timeline-fecha">
+                📅 ${escapeHtml(m.fecha || '')}
+                <span class="timeline-tipo ${escapeHtml(tipo)}">${escapeHtml(tipo)}</span>
+              </div>
+              <div class="timeline-body">
+                🏥 <strong>Servicio:</strong> ${escapeHtml(m.ubicacion || '—')}<br>
+                👤 <strong>Recibido por:</strong> ${receptor} ${estado}
+                ${m.observacion ? `<br><small style="opacity:.75;">📝 ${escapeHtml(m.observacion)}</small>` : ''}
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+      }
+      cont.innerHTML = html;
+    } catch (err) {
+      cont.innerHTML = `<div class="hist-vacio" style="color:#c0392b;">⚠️ ${escapeHtml(err.message)}</div>`;
+    }
+
+    activarCierreModal(modal);
+  }
+
+  async function darDeBaja(b) {
+    if (!b) return;
+    const ok = await UI.confirm(
+      `¿Dar de baja el bien "${b.descripcion}"?\n\nSe cambiará su condición a CHATARRA.`,
+      'Confirmar baja',
+      { textoAceptar: 'Dar de baja', tipo: 'warning' }
+    );
+    if (!ok) return;
+
+    const chatarra = catalogos.estados.find(e => (e.nombre || '').toUpperCase() === 'CHATARRA');
+    if (!chatarra) { UI.error('No se encontró CHATARRA en los catálogos.'); return; }
+
+    const payload = {
+      nro: b.nro, inventario_2026: b.inventario_2026,
+      codigo_patrimonio: b.codigo_patrimonio, codigo_interno: b.codigo_interno,
+      descripcion: b.descripcion, establecimiento_id: b.establecimiento_id,
+      usuario_id: b.usuario_id, ubicacion_id: b.ubicacion_id,
+      modelo_id: b.modelo_id, medida: b.medida, marca_id: b.marca_id,
+      estado_id: chatarra.id, serie: b.serie, color: b.color,
+      caracteristicas: b.caracteristicas,
+      fecha_mantenimiento: b.fecha_mantenimiento,
+      tiempo_mantenimiento: b.tiempo_mantenimiento,
+      observaciones: (b.observaciones ? b.observaciones + ' | ' : '') + `[BAJA ${new Date().toISOString().slice(0,10)}]`
+    };
+
+    try {
+      await api('/api/bienes/' + b.id, { method: 'PUT', body: payload });
+      await UI.success('Bien dado de baja correctamente.');
+      cargar();
+    } catch (err) { UI.error(err.message); }
+  }
+
+  function abrirModalNuevo() { abrirModal(null); }
+  function abrirModalEditar(b) { abrirModal(b); }
+
+  async function abrirModal(bien) {
+    editandoId = bien?.id || null;
+    const tpl = document.getElementById('tplModal').content.cloneNode(true);
+    document.body.appendChild(tpl);
+    const modal = document.body.lastElementChild;
+
+    fillSel2(modal.querySelector('#selEstadoBien'), catalogos.tipos, bien?.inventario_2026, false);
+    fillSel2(modal.querySelector('#selCondicion'), catalogos.estados, bien?.estado_id, false);
+    fillSel2(modal.querySelector('#selUbi'), catalogos.ubicaciones, bien?.ubicacion_id, false);
+
+    const selEst = modal.querySelector('#selEst');
+    const avisoEst = modal.querySelector('#avisoEstablecimiento');
+    fillSel2(selEst, catalogos.establecimientos, bien?.establecimiento_id || USUARIO.establecimiento_id, false);
+
+    await cargarProfesionalesEn(modal.querySelector('#selUsu'), bien?.usuario_id);
+
+    const selEstadoBien = modal.querySelector('#selEstadoBien');
+    const inpCodPatrimonio = modal.querySelector('#inpCodPatrimonio');
+    const avisoEl = modal.querySelector('#avisoCodPatrimonio');
+
+    if (bien) {
+      modal.querySelector('#titulo').textContent = 'Editar bien patrimonial';
+      modal.querySelector('#inpNro').value = bien.nro ?? '';
+      for (const k of ['codigo_patrimonio','codigo_interno','descripcion','medida','serie','color','caracteristicas','fecha_mantenimiento','tiempo_mantenimiento','observaciones']) {
+        const el = modal.querySelector(`[name="${k}"]`);
+        if (el) el.value = bien[k] ?? '';
+      }
+      modal.querySelector('#modeloTxt').value = bien.modelo || '';
+      modal.querySelector('#marcaTxt').value = bien.marca || '';
+    } else {
+      try {
+        const r = await api('/api/bienes/siguiente-nro');
+        modal.querySelector('#inpNro').value = r.siguiente;
+      } catch { modal.querySelector('#inpNro').value = ''; }
+    }
+
+    const valorOriginalCodPat = inpCodPatrimonio.value;
+    function refrescarEstadoCodPat() { aplicarReglaCodPatrimonio(selEstadoBien, inpCodPatrimonio, avisoEl, valorOriginalCodPat); }
+    selEstadoBien.addEventListener('change', refrescarEstadoCodPat);
+    refrescarEstadoCodPat();
+    aplicarReglaEstablecimiento(selEst, avisoEst);
+    activarCierreModal(modal);
+
+    modal.querySelector('#formBien').addEventListener('submit', async e => {
+      e.preventDefault();
+      const req = modal.querySelectorAll('[required]');
+      let invalido = null;
+      for (const el of req) {
+        if (el.disabled) continue;
+        if (!el.value || (el.tagName === 'SELECT' && el.value === '')) { invalido = el; break; }
+      }
+      if (invalido) {
+        invalido.focus();
+        invalido.style.borderColor = '#c0392b';
+        UI.warning('Complete todos los campos obligatorios (*)');
+        return;
+      }
+
+      const fd = new FormData(e.target);
+      const payload = Object.fromEntries(fd.entries());
+      payload.nro = payload.nro ? Number(payload.nro) : null;
+      if (selEst.disabled) payload.establecimiento_id = selEst.value;
+
+      ['estado_id','establecimiento_id','ubicacion_id','usuario_id'].forEach(k => {
+        payload[k] = (payload[k] === '' || payload[k] === undefined) ? null : Number(payload[k]);
+      });
+
+      const esAdminGlobal = USUARIO.rol === 'admin' && !USUARIO.establecimiento_id;
+      if (!esAdminGlobal && USUARIO.establecimiento_id) payload.establecimiento_id = USUARIO.establecimiento_id;
+
+      const tipoId = payload.inventario_2026;
+      const tipo = catalogos.tipos.find(t => String(t.id) === String(tipoId));
+      payload.inventario_2026 = tipo ? tipo.nombre : null;
+      if (tipo && tipo.nombre.toUpperCase() === 'SOBRANTE') payload.codigo_patrimonio = null;
+
+      const marcaTxt = (payload.marca || '').trim();
+      const modeloTxt = (payload.modelo || '').trim();
+      delete payload.marca;
+      delete payload.modelo;
+
+      try {
+        if (marcaTxt) {
+          const exist = catalogos.marcas.find(m => m.nombre.toLowerCase() === marcaTxt.toLowerCase());
+          payload.marca_id = exist ? exist.id : (await api('/api/catalogos/marcas', { method: 'POST', body: { nombre: marcaTxt } })).id;
+        }
+        if (modeloTxt) {
+          const exist = catalogos.modelos.find(m => m.nombre.toLowerCase() === modeloTxt.toLowerCase());
+          payload.modelo_id = exist ? exist.id : (await api('/api/catalogos/modelos', { method: 'POST', body: { nombre: modeloTxt, marca_id: payload.marca_id || null } })).id;
+        }
+
+        if (editandoId) {
+          await api('/api/bienes/' + editandoId, { method: 'PUT', body: payload });
+          await UI.success('Bien actualizado correctamente.');
+        } else {
+          await api('/api/bienes', { method: 'POST', body: payload });
+          await UI.success('Bien registrado correctamente.');
+        }
+        modal.remove();
+        await cargarCatalogos();
+        cargar();
+      } catch (err) { UI.error(err.message, 'Error al guardar'); }
+    });
+  }
+
+  function abrirModalImportar() {
+    const tpl = document.getElementById('tplImportar').content.cloneNode(true);
+    document.body.appendChild(tpl);
+    const modal = document.body.lastElementChild;
+
+    const dropZone       = modal.querySelector('#dropZone');
+    const fileInput      = modal.querySelector('#fileInput');
+    const btnSeleccionar = modal.querySelector('#btnSeleccionar');
+    const previewWrap    = modal.querySelector('#previewWrap');
+    const previewNombre  = modal.querySelector('#previewNombre');
+    const previewCount   = modal.querySelector('#previewCount');
+    const previewTabla   = modal.querySelector('#previewTabla');
+    const btnConfirmar   = modal.querySelector('#btnConfirmarImport');
+    const btnCambiar     = modal.querySelector('#btnCambiarArchivo');
+    const resultadoWrap  = modal.querySelector('#resultadoWrap');
+
+    let datosMapeados = [];
+
+    function resetDrop() {
+      dropZone.style.display = 'block';
+      previewWrap.style.display = 'none';
+      resultadoWrap.style.display = 'none';
+      btnConfirmar.disabled = true;
+      datosMapeados = [];
+    }
+
+    async function procesarArchivo(file) {
+      if (!file) return;
+      if (!/\.(xlsx|xls)$/i.test(file.name)) { UI.warning('El archivo debe ser .xlsx o .xls'); return; }
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const primeraHoja = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[primeraHoja];
+        const filas = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+        if (filas.length === 0) { UI.warning('El archivo Excel está vacío.'); return; }
+
+        datosMapeados = mapearFilas(filas);
+        const validas = datosMapeados.filter(f => (f.descripcion || '').toString().trim());
+        if (validas.length === 0) { UI.warning('No se encontraron filas con el campo "Descripción" lleno.'); return; }
+        datosMapeados = validas;
+
+        previewNombre.textContent = file.name;
+        previewCount.textContent = `${datosMapeados.length} fila(s) válida(s)`;
+        renderPreview(previewTabla, datosMapeados.slice(0, 10));
+
+        dropZone.style.display = 'none';
+        previewWrap.style.display = 'block';
+        btnConfirmar.disabled = false;
+      } catch (err) { UI.error('Error al leer el archivo: ' + err.message); }
+    }
+
+    function renderPreview(tabla, filas) {
+      const headers = ['N°', 'Estado', 'Cód. Patrimonio', 'Código Interno', 'Descripción', 'Establecimiento', 'Usuario', 'Ubicación', 'Marca', 'Modelo', 'Condición'];
+      const keys = ['nro', 'inventario_2026', 'codigo_patrimonio', 'codigo_interno', 'descripcion', 'establecimiento', 'usuario', 'ubicacion', 'marca', 'modelo', 'condicion'];
+      let html = '<thead><tr>';
+      headers.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
+      html += '</tr></thead><tbody>';
+      filas.forEach(f => {
+        html += '<tr>';
+        keys.forEach(k => html += `<td title="${escapeHtml(f[k] || '')}">${escapeHtml(f[k] || '—')}</td>`);
+        html += '</tr>';
+      });
+      html += '</tbody>';
+      tabla.innerHTML = html;
+    }
+
+    btnSeleccionar.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => procesarArchivo(e.target.files[0]));
+    btnCambiar.addEventListener('click', () => { resetDrop(); fileInput.click(); });
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) procesarArchivo(e.dataTransfer.files[0]);
+    });
+
+    btnConfirmar.addEventListener('click', async () => {
+      if (datosMapeados.length === 0) return;
+      const ok = await UI.confirm(
+        `¿Importar ${datosMapeados.length} bien(es) al sistema?\n\nSe crearán automáticamente establecimientos, marcas, modelos y ubicaciones que no existan.`,
+        'Confirmar importación',
+        { textoAceptar: 'Importar', tipo: 'info' }
+      );
+      if (!ok) return;
+
+      btnConfirmar.disabled = true;
+      btnConfirmar.textContent = '⏳ Importando...';
+
+      try {
+        const r = await api('/api/bienes/importar', { method: 'POST', body: { bienes: datosMapeados } });
+        previewWrap.style.display = 'none';
+        resultadoWrap.style.display = 'block';
+
+        let clase = 'result-ok';
+        let icono = '✅';
+        if (r.errores > 0 && r.importados === 0) { clase = 'result-error'; icono = '❌'; }
+        else if (r.errores > 0) { clase = 'result-warn'; icono = '⚠️'; }
+
+        let html = `
+          <div class="${clase}">
+            <h3>${icono} Resultado de la importación</h3>
+            <ul style="margin:.5rem 0 0 1.2rem; font-size:.85rem; line-height:1.7;">
+              <li><strong>Total procesadas:</strong> ${r.total}</li>
+              <li><strong>✅ Importadas:</strong> ${r.importados}</li>
+              <li><strong>❌ Errores:</strong> ${r.errores}</li>
+            </ul>
+        `;
+        if (r.creados) {
+          html += `<div style="margin-top:.8rem; font-size:.8rem; background:rgba(255,255,255,.4); padding:.6rem; border-radius:8px;">
+            <strong>Creados automáticamente:</strong><br>
+            🏥 Establecimientos: ${r.creados.establecimientos} · 📍 Ubicaciones: ${r.creados.ubicaciones} ·
+            🏷️ Marcas: ${r.creados.marcas} · 📦 Modelos: ${r.creados.modelos} ·
+            ✅ Estados: ${r.creados.estados} · 👤 Profesionales: ${r.creados.profesionales}
+          </div>`;
+        }
+        if (r.detalles && r.detalles.length > 0) {
+          html += `<div class="result-list"><strong>Detalle de errores:</strong>
+            ${r.detalles.map(d => `<div class="err">Fila ${d.fila}: ${escapeHtml(d.error)}</div>`).join('')}
+          </div>`;
+        }
+        html += `</div>`;
+        resultadoWrap.innerHTML = html;
+        btnConfirmar.textContent = '✅ Completado';
+        btnConfirmar.disabled = true;
+
+        setTimeout(async () => { await cargarCatalogos(); cargar(); }, 1500);
+      } catch (err) {
+        UI.error(err.message, 'Error en la importación');
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = '✅ Confirmar Importación';
+      }
+    });
+
+    activarCierreModal(modal);
+  }
+
+  document.getElementById('btnNuevo').addEventListener('click', abrirModalNuevo);
+  document.getElementById('btnImportar').addEventListener('click', abrirModalImportar);
+  document.getElementById('q').addEventListener('input', debounce(aplicarFiltros, 300));
+  document.getElementById('fEstado').addEventListener('change', aplicarFiltros);
+
+  document.getElementById('btnExport').addEventListener('click', async () => {
+    const btn = document.getElementById('btnExport');
+    const originalText = btn.textContent;
+    if (bienesFiltrados.length === 0) { UI.info('No hay bienes para exportar.'); return; }
+    btn.disabled = true;
+    btn.textContent = '⏳ Generando...';
+
+    setTimeout(() => {
+      try {
+        const filas = bienesFiltrados.map((b, i) => ({
+          'N°': i + 1, 'Estado': b.inventario_2026 || '', 'Cod. Patrimonio': b.codigo_patrimonio || '',
+          'Código Interno': b.codigo_interno || '', 'Descripción': b.descripcion || '',
+          'Establecimiento': b.establecimiento || '', 'Usuario / Encargado': b.encargado || '',
+          'Ubicación Física': b.ubicacion || '', 'Marca': b.marca || '', 'Modelo': b.modelo || '',
+          'Medida': b.medida || '', 'Condición': b.estado || '', 'Serie': b.serie || '',
+          'Color': b.color || '', 'Características': b.caracteristicas || '',
+          'F. Mantenimiento': b.fecha_mantenimiento || '', 'Tiempo Mant.': b.tiempo_mantenimiento || '',
+          'Observaciones': b.observaciones || ''
+        }));
+        const ws = XLSX.utils.json_to_sheet(filas);
+        ws['!cols'] = [{wch:5},{wch:14},{wch:16},{wch:16},{wch:32},{wch:22},{wch:22},{wch:20},{wch:14},{wch:18},{wch:12},{wch:12},{wch:16},{wch:12},{wch:24},{wch:14},{wch:12},{wch:24}];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Bienes');
+        const resumen = [
+          ['REPORTE DE BIENES PATRIMONIALES'], [''],
+          ['Sistema:', 'Control de Patrimonio - Micro Red de Salud Paucará'],
+          ['Red:', 'Red de Salud Acobamba'],
+          ['Generado:', fechaHoraLarga()],
+          ['Usuario:', USUARIO.nombre + ' (' + USUARIO.rol + ')'],
+          ['Establecimiento:', USUARIO.establecimiento_nombre || 'Todos (admin global)'],
+          [''], ['RESUMEN'],
+          ['Total de bienes exportados:', bienesFiltrados.length]
+        ];
+        const wsRes = XLSX.utils.aoa_to_sheet(resumen);
+        wsRes['!cols'] = [{ wch: 30 }, { wch: 60 }];
+        XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen');
+        XLSX.writeFile(wb, `Inventario_Patrimonial_${fechaHoyArchivo()}.xlsx`);
+        UI.success('Excel generado y descargado.');
+      } catch (err) {
+        console.error(err);
+        UI.error('Error al generar el Excel: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }, 200);
+  });
+
+  function debounce(fn, ms) {
+    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  }
+
+  await cargarCatalogos();
+  await cargar();
+</script>
+</body>
+</html>

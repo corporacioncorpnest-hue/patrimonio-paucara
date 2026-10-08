@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stock de Almacén</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/sidebar.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <aside class="glass sidebar">
+    <div class="sidebar-marca">
+      <div class="logo-mini-wrap">
+        <div class="logo-mini-anillo a1"></div>
+        <div class="logo-mini-anillo a2"></div>
+        <div class="logo-mini-particula p1"></div>
+        <div class="logo-mini-particula p2"></div>
+        <div class="logo-mini-halo"></div>
+        <div class="logo-mini-central">
+          <img src="img/logo.png" alt="Micro Red Paucará"
+               onerror="this.style.display='none'; this.parentElement.classList.add('sin-logo');">
+          <div class="logo-mini-fallback">✚</div>
+        </div>
+      </div>
+      <h2 class="sidebar-titulo">Patrimonio</h2>
+    </div>
+
+    <a href="dashboard.html" class="sidebar-dashboard">
+      <span>📊</span>
+      <span>Dashboard</span>
+    </a>
+
+    <div class="sidebar-modulo" data-modulo="patrimonio">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">🏛️</span>
+        <span class="modulo-titulo">Patrimonio</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="bienes.html">🏷️ Bienes</a>
+        <a href="actas.html">📄 Actas</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo abierto" data-modulo="almacen">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">📦</span>
+        <span class="modulo-titulo">Almacén</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="catalogo-suministros.html">📋 Catálogo de Suministros</a>
+        <a href="ingresos.html">📥 Ingresos</a>
+        <a href="salidas.html">📤 Salidas</a>
+        <a href="stock.html" class="active">📊 Stock</a>
+        <a href="kardex.html">🗂️ Kardex</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="configuracion">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">⚙️</span>
+        <span class="modulo-titulo">Configuración</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="establecimientos.html">🏥 Establecimientos</a>
+        <a href="profesionales.html">👥 Profesionales</a>
+        <a href="encargados.html">🧑‍💼 Responsables</a>
+        <a href="usuarios.html">👤 Usuarios</a>
+        <a href="reportes.html">📈 Reportes</a>
+      </div>
+    </div>
+
+    <a href="#" id="logout" style="margin-top:auto;">🚪 Salir</a>
+  </aside>
+
+  <main class="main">
+    <div class="glass topbar">
+      <h1>Stock Actual de Almacén</h1>
+      <span class="user">👤 <span class="user-nombre"></span></span>
+    </div>
+
+    <div class="glass panel" style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+      <input id="q" placeholder="🔍 Buscar suministro..."
+             style="flex:1;min-width:220px;padding:.55rem .8rem;border:1px solid #cbd5e1;border-radius:8px;" />
+    </div>
+
+    <div class="glass tabla-wrap">
+      <table class="inventario" style="min-width:auto;">
+        <thead>
+          <tr>
+            <th style="width:50px;">#</th>
+            <th style="width:120px;">Código</th>
+            <th>Descripción</th>
+            <th style="width:100px;">Unidad</th>
+            <th style="width:100px;text-align:center;">Ingresos</th>
+            <th style="width:100px;text-align:center;">Salidas</th>
+            <th style="width:100px;text-align:center;">Stock</th>
+            <th style="width:100px;text-align:center;">Mínimo</th>
+            <th style="width:110px;text-align:center;">Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { api, protegerPagina, logout, escapeHtml } from './js/api.js';
+  await protegerPagina();
+  logout();
+
+  let stockData = [];
+
+  function normalizar(txt) {
+    return String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  async function cargar() {
+    stockData = await api('/api/almacen/stock');
+    render();
+  }
+
+  function render() {
+    const q = normalizar(document.getElementById('q').value.trim());
+    const filtrados = stockData.filter(s => {
+      if (!q) return true;
+      return normalizar(s.codigo).includes(q) ||
+             normalizar(s.descripcion).includes(q) ||
+             normalizar(s.unidad_medida).includes(q);
+    });
+
+    const tb = document.getElementById('tbody');
+    tb.innerHTML = '';
+
+    if (filtrados.length === 0) {
+      tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">No hay suministros.</td></tr>';
+      return;
+    }
+
+    filtrados.forEach((s, idx) => {
+      const stock = s.stock;
+      const min = s.stock_minimo || 0;
+      let estado = '✅ OK';
+      let bg = '#dcfce7', color = '#166534';
+      if (stock <= 0) { estado = '❌ AGOTADO'; bg = '#fee2e2'; color = '#991b1b'; }
+      else if (stock < min) { estado = '⚠️ BAJO'; bg = '#fef3c7'; color = '#92400e'; }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td><span style="font-family:monospace;background:#eff6ff;color:#1d6fb3;padding:.2rem .5rem;border-radius:6px;font-size:.72rem;font-weight:700;">${escapeHtml(s.codigo || '—')}</span></td>
+        <td><strong>${escapeHtml(s.descripcion)}</strong></td>
+        <td>${escapeHtml(s.unidad_medida || '—')}</td>
+        <td style="text-align:center;color:#16a34a;font-weight:700;">+${s.total_ingresos}</td>
+        <td style="text-align:center;color:#dc2626;font-weight:700;">-${s.total_salidas}</td>
+        <td style="text-align:center;font-size:1.1rem;font-weight:800;color:#1d6fb3;">${stock}</td>
+        <td style="text-align:center;color:#92400e;font-weight:700;">${min}</td>
+        <td style="text-align:center;"><span style="background:${bg};color:${color};padding:.25rem .6rem;border-radius:999px;font-size:.72rem;font-weight:700;">${estado}</span></td>
+      `;
+      tb.appendChild(tr);
+    });
+  }
+
+  document.getElementById('q').addEventListener('input', render);
+  await cargar();
+</script>
+</body>
+</html>

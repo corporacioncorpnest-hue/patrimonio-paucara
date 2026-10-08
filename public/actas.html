@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Actas · Patrimonio Paucará</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/sidebar.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <aside class="glass sidebar">
+    <div class="sidebar-marca">
+      <div class="logo-mini-wrap">
+        <div class="logo-mini-anillo a1"></div>
+        <div class="logo-mini-anillo a2"></div>
+        <div class="logo-mini-particula p1"></div>
+        <div class="logo-mini-particula p2"></div>
+        <div class="logo-mini-halo"></div>
+        <div class="logo-mini-central">
+          <img src="img/logo.png" alt="Micro Red Paucará"
+               onerror="this.style.display='none'; this.parentElement.classList.add('sin-logo');">
+          <div class="logo-mini-fallback">✚</div>
+        </div>
+      </div>
+      <h2 class="sidebar-titulo">Patrimonio</h2>
+    </div>
+
+    <a href="dashboard.html" class="sidebar-dashboard">
+      <span>📊</span>
+      <span>Dashboard</span>
+    </a>
+
+    <div class="sidebar-modulo abierto" data-modulo="patrimonio">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">🏛️</span>
+        <span class="modulo-titulo">Patrimonio</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="bienes.html">🏷️ Bienes</a>
+        <a href="actas.html" class="active">📄 Actas</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="almacen">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">📦</span>
+        <span class="modulo-titulo">Almacén</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="catalogo-suministros.html">📋 Catálogo de Suministros</a>
+        <a href="ingresos.html">📥 Ingresos</a>
+        <a href="salidas.html">📤 Salidas</a>
+        <a href="stock.html">📊 Stock</a>
+        <a href="kardex.html">🗂️ Kardex</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="configuracion">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">⚙️</span>
+        <span class="modulo-titulo">Configuración</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="establecimientos.html">🏥 Establecimientos</a>
+        <a href="profesionales.html">👥 Profesionales</a>
+        <a href="encargados.html">🧑‍💼 Responsables</a>
+        <a href="usuarios.html">👤 Usuarios</a>
+        <a href="reportes.html">📈 Reportes</a>
+      </div>
+    </div>
+
+    <a href="#" id="logout" style="margin-top:auto;">🚪 Salir</a>
+  </aside>
+
+  <main class="main">
+    <div class="glass topbar">
+      <h1>Actas de Entrega y Devolución</h1>
+      <span class="user">👤 <span class="user-nombre"></span></span>
+    </div>
+
+    <div class="glass panel" style="padding:1.2rem 1.5rem;margin-bottom:1rem;">
+      <label style="font-weight:700;color:#1f2a37;margin-bottom:.5rem;display:block;font-size:.95rem;">
+        🔍 Buscar bienes para generar el acta
+      </label>
+      <div class="buscador-wrap">
+        <input type="text" id="buscador"
+               placeholder="Escribe cualquier carácter: descripción, código, serie, marca, modelo..."
+               autocomplete="off" />
+        <button type="button" id="btnLimpiar" style="display:none;" title="Limpiar selección">✕ Limpiar</button>
+      </div>
+      <div id="resultados" class="resultados"></div>
+    </div>
+
+    <div id="barraSel" class="barra-sel" style="display:none;">
+      <div><strong id="contadorSel">0</strong> bien(es) seleccionado(s)</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <button class="btn btn-ver-avance" id="btnVerActa">🕒 Ver última acta</button>
+        <button class="btn btn-ghost" id="btnCancelarSel" style="color:#1f2a37;">🗑️ Cancelar</button>
+        <button class="btn btn-primary" id="btnEmitir">📄 Emitir acta</button>
+      </div>
+    </div>
+
+    <div class="glass tabla-wrap">
+      <table class="inventario" style="min-width:auto;">
+        <thead id="theadTabla"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="paginacion-moderna" id="paginacion"></div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL EMITIR -->
+<template id="tplEmitir">
+  <div class="modal-backdrop">
+    <form class="glass modal" id="formEmitir" style="max-width:620px;">
+      <button type="button" class="btn-close-modal" data-close title="Cerrar">✕</button>
+      <h2>Emitir acta</h2>
+      <div class="grid-2">
+        <div>
+          <label>Tipo *</label>
+          <select name="tipo" required>
+            <option value="ENTREGA">ENTREGA</option>
+            <option value="RECEPCION">DEVOLUCIÓN</option>
+          </select>
+        </div>
+        <div>
+          <label>Número *</label>
+          <input name="numero" required placeholder="ACT-2026-001" />
+        </div>
+        <div>
+          <label>Fecha *</label>
+          <input name="fecha" type="date" required />
+        </div>
+        <div>
+          <label>Establecimiento</label>
+          <select name="establecimiento_id" id="selEst"></select>
+        </div>
+        <div>
+          <label>Responsable de Patrimonio 🔒</label>
+          <select name="entrega_id" id="selEnt" disabled
+                  style="background:#f1f5f9;color:#475569;cursor:not-allowed;font-weight:600;"></select>
+          <small style="font-size:.72rem;color:#94a3b8;margin-top:.25rem;display:block;">
+            Designado automáticamente.
+          </small>
+        </div>
+        <div>
+          <label id="lblRecibe">Recibe (Personal) *</label>
+          <select name="recibe_id" id="selRec" required></select>
+        </div>
+        <div class="grid-full">
+          <label>Observaciones</label>
+          <textarea name="observaciones" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close style="color:#1f2a37;">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Emitir</button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<!-- MODAL ÚLTIMA ACTA -->
+<template id="tplUltimaActa">
+  <div class="modal-backdrop">
+    <div class="glass modal" style="max-width:720px;">
+      <button type="button" class="btn-close-modal" data-close title="Cerrar">✕</button>
+      <div class="detalle-header">
+        <div>
+          <h2 style="margin:0;">🕒 Última acta registrada</h2>
+          <p style="opacity:.7;font-size:.85rem;margin-top:.25rem;" id="uaSubtitulo"></p>
+        </div>
+      </div>
+      <div id="uaContenido"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close>Cerrar</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tplImpresion">
+  <div class="hoja-imprimible" id="hojaImprimible"></div>
+</template>
+
+<style>
+  .buscador-wrap { display: flex; gap: .5rem; align-items: center; }
+  #buscador {
+    flex: 1; padding: .8rem 1.1rem;
+    border: 2px solid #cbd5e1; border-radius: 10px;
+    font-size: .95rem; transition: all .2s; background: #fff; color: #1f2a37;
+  }
+  #buscador:focus { outline: none; border-color: #1d6fb3; box-shadow: 0 0 0 4px rgba(29,111,179,.15); }
+  #btnLimpiar { padding: .7rem 1rem; background: #fee2e2; color: #991b1b; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; }
+  #btnLimpiar:hover { background: #fecaca; }
+
+  .resultados { max-height: 240px; overflow-y: auto; margin-top: .6rem; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; display: none; }
+  .resultados.activo { display: block; }
+  .resultados .item { padding: .7rem 1rem; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 1rem; transition: background .12s; }
+  .resultados .item:last-child { border-bottom: none; }
+  .resultados .item:hover { background: #eff6ff; }
+  .resultados .item .desc { font-weight: 600; color: #1f2a37; font-size: .9rem; }
+  .resultados .item .meta { font-size: .75rem; color: #64748b; margin-top: 2px; }
+  .resultados .item .tag { font-size: .7rem; padding: .15rem .55rem; border-radius: 999px; background: #dbeafe; color: #1e40af; font-weight: 700; white-space: nowrap; }
+  .resultados .item.ya-selec { background: #f0fdf4; opacity: .65; cursor: default; }
+  .resultados .item.ya-selec::after { content: '✓ Incluido'; font-size: .68rem; color: #16a34a; font-weight: 700; margin-left: .5rem; }
+  .resultados .vacio { padding: 1rem; text-align: center; color: #94a3b8; font-size: .88rem; }
+
+  .barra-sel {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem; padding: 1rem 1.4rem; margin-bottom: 1rem;
+    background: linear-gradient(135deg, #1d6fb3, #0ea5e9);
+    color: #fff; border-radius: 14px;
+    box-shadow: 0 8px 25px rgba(29,111,179,.35);
+    font-weight: 600; animation: slideDown .25s ease;
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  .barra-sel strong { font-size: 1.2rem; background: rgba(255,255,255,.25); padding: .15rem .6rem; border-radius: 999px; margin-right: .35rem; }
+
+  .btn-ver-avance { background: rgba(255,255,255,.22); color: #fff; border: 1px solid rgba(255,255,255,.45); backdrop-filter: blur(8px); font-weight: 700; }
+  .btn-ver-avance:hover { background: rgba(255,255,255,.35); transform: translateY(-2px); }
+
+  .row-actions button { border: none; padding: .4rem .7rem; border-radius: 8px; font-size: .85rem; cursor: pointer; transition: all .15s; font-weight: 600; display: inline-flex; align-items: center; gap: .25rem; }
+  .row-actions button:hover { transform: translateY(-1px); }
+  .row-actions .quitar { background: #fee2e2; color: #991b1b; }
+  .row-actions .btn-ver { background: #dbeafe; color: #1e40af; }
+  .row-actions .btn-imprimir { background: #dbeafe; color: #1d6fb3; }
+
+  .paginacion-moderna { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1.2rem .5rem .3rem; border-top: 1px solid #e2e8f0; margin-top: .8rem; }
+  .paginacion-moderna:empty { display: none; padding: 0; border: none; margin: 0; }
+  .paginacion-moderna .info { font-size: .85rem; color: #475569; }
+  .paginacion-moderna .info strong { color: #1d6fb3; font-weight: 700; }
+  .paginacion-moderna .controles { display: flex; gap: .35rem; align-items: center; }
+  .paginacion-moderna button { min-width: 38px; height: 38px; border: 1px solid #e2e8f0; background: #fff; color: #1f2a37; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .18s; display: inline-flex; align-items: center; justify-content: center; padding: 0 .55rem; }
+  .paginacion-moderna button:hover:not(:disabled):not(.activo) { background: #eff6ff; border-color: #93c5fd; color: #1d6fb3; transform: translateY(-1px); }
+  .paginacion-moderna button:disabled { opacity: .35; cursor: not-allowed; }
+  .paginacion-moderna button.activo { background: linear-gradient(135deg, #1d6fb3, #0ea5e9); color: #fff; border-color: transparent; box-shadow: 0 4px 12px rgba(29,111,179,.35); }
+  .paginacion-moderna .ellipsis { padding: 0 .3rem; color: #94a3b8; font-weight: 700; }
+
+  .detalle-header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: .8rem; margin-bottom: 1rem; padding-right: 50px; }
+  .detalle-header h2 { font-family: 'Playfair Display', serif; color: #1f2a37; }
+
+  .ua-item { display: flex; gap: 1rem; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: .75rem; background: #f8fafc; }
+  .ua-item:hover { border-color: #93c5fd; background: #eff6ff; }
+  .ua-item .ua-info { flex: 1; display: flex; flex-direction: column; gap: .3rem; }
+  .ua-item .ua-numero { font-weight: 800; font-size: 1.05rem; color: #1d6fb3; letter-spacing: .5px; }
+  .ua-item .ua-bien { font-size: .82rem; color: #475569; font-weight: 500; }
+  .ua-item .ua-meta { display: flex; gap: 1.2rem; margin-top: .35rem; font-size: .82rem; color: #334155; flex-wrap: wrap; }
+  .ua-item .ua-meta strong { color: #1f2a37; font-weight: 700; }
+  .ua-badge { display: inline-block; padding: .15rem .55rem; border-radius: 999px; font-size: .7rem; font-weight: 700; color: #fff; text-transform: uppercase; }
+  .ua-fecha { font-size: .78rem; color: #64748b; font-weight: 600; }
+  .ua-vacio { text-align: center; padding: 2rem 1rem; color: #64748b; font-size: .92rem; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; }
+  .ua-vacio .icono { font-size: 2.5rem; display: block; margin-bottom: .5rem; opacity: .5; }
+
+  .hoja-imprimible { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; overflow: auto; padding: 20px 0; display: none; }
+  .hoja-imprimible.activo { display: block; }
+  .acta-doc { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; width: 210mm; height: 148.5mm; padding: 10mm 12mm; margin: 0 auto 20mm; box-sizing: border-box; page-break-after: always; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,.15); }
+  .acta-titulo { text-align: center; font-size: 10.5pt; font-weight: bold; text-transform: uppercase; line-height: 1.25; margin-bottom: 2mm; }
+  .acta-numero { text-align: center; font-size: 8pt; color: #333; margin-bottom: 3mm; }
+  .acta-parrafo { font-size: 8pt; text-align: justify; line-height: 1.4; margin-bottom: 2.5mm; }
+  .acta-parrafo strong { font-weight: bold; }
+  .acta-tabla-wrap { flex: 0 0 auto; }
+  .acta-tabla { width: 100%; border-collapse: collapse; font-size: 7.5pt; margin: 0; }
+  .acta-tabla th, .acta-tabla td { border: 1px solid #000; padding: 1.5mm 1.5mm; text-align: left; vertical-align: top; word-wrap: break-word; }
+  .acta-tabla th { background: #e5e7eb; font-weight: bold; text-align: center; font-size: 7.5pt; }
+  .acta-tabla td.centro { text-align: center; }
+  .acta-cierre { font-size: 8pt; line-height: 1.4; text-align: justify; margin-top: 3mm; margin-bottom: 0; }
+  .acta-firmas { display: flex; justify-content: space-around; gap: 15mm; margin-top: auto; margin-bottom: 2mm; padding-top: 15mm; }
+  .firma { text-align: center; font-size: 8pt; flex: 1; max-width: 80mm; }
+  .firma .linea { border-top: 1px solid #000; margin: 0 auto 2mm; width: 100%; }
+  .firma .nombre { font-weight: bold; font-size: 8pt; line-height: 1.3; margin-bottom: 1mm; }
+  .firma .rol { font-size: 7.5pt; line-height: 1.25; color: #333; font-style: italic; }
+
+  .cerrar-preview { position: fixed; top: 16px; right: 16px; z-index: 10000; background: #c0392b; color: #fff; border: none; padding: .7rem 1.1rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: .9rem; box-shadow: 0 6px 20px rgba(192,57,43,.4); }
+  .cerrar-preview:hover { background: #a93226; }
+  .btn-print-preview { position: fixed; top: 16px; right: 120px; z-index: 10000; background: #1d6fb3; color: #fff; border: none; padding: .7rem 1.1rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: .9rem; box-shadow: 0 6px 20px rgba(29,111,179,.4); }
+  .btn-print-preview:hover { background: #155a94; }
+
+  @media print {
+    @page { size: A4 portrait; margin: 0; }
+    body * { visibility: hidden !important; }
+    .hoja-imprimible, .hoja-imprimible * { visibility: visible !important; }
+    .hoja-imprimible { position: absolute !important; left: 0; top: 0; width: 100%; padding: 0; background: #fff; }
+    .acta-doc { width: 210mm; height: 148.5mm; padding: 10mm 12mm; margin: 0; page-break-after: always; box-shadow: none; }
+    .cerrar-preview, .btn-print-preview { display: none !important; }
+  }
+
+  @media (max-width: 700px) {
+    .barra-sel { flex-direction: column; align-items: stretch; }
+    .buscador-wrap { flex-direction: column; align-items: stretch; }
+    .paginacion-moderna { flex-direction: column; align-items: stretch; text-align: center; }
+    .paginacion-moderna .controles { justify-content: center; flex-wrap: wrap; }
+  }
+</style>
+
+<script type="module">
+  import { api, protegerPagina, logout, escapeHtml } from './js/api.js';
+  import UI from './js/ui.js';
+
+  const USUARIO = await protegerPagina();
+  logout();
+
+  function activarCierreModal(modalEl) {
+    modalEl.querySelectorAll('[data-close]').forEach(btn =>
+      btn.addEventListener('click', () => modalEl.remove()));
+    modalEl.addEventListener('click', e => { if (e.target === modalEl) e.stopPropagation(); });
+    const onEsc = e => { if (e.key === 'Escape') { modalEl.remove(); document.removeEventListener('keydown', onEsc); } };
+    document.addEventListener('keydown', onEsc);
+  }
+
+  let bienes = [];
+  let actas = [];
+  let seleccionados = new Map();
+  let encargadoActivo = null;
+  let paginaActual = 1;
+  const POR_PAGINA = 5;
+
+  const buscador = document.getElementById('buscador');
+  const resultados = document.getElementById('resultados');
+  const barraSel = document.getElementById('barraSel');
+  const contadorSel = document.getElementById('contadorSel');
+  const btnLimpiar = document.getElementById('btnLimpiar');
+  const theadTabla = document.getElementById('theadTabla');
+  const tbody = document.getElementById('tbody');
+  const paginacion = document.getElementById('paginacion');
+
+  async function cargar() {
+    [bienes, actas, encargadoActivo] = await Promise.all([
+      api('/api/bienes'),
+      api('/api/actas'),
+      api('/api/encargados/activo').catch(() => null)
+    ]);
+    paginaActual = 1;
+    renderTabla();
+  }
+
+  function renderTabla() {
+    if (seleccionados.size > 0) {
+      theadTabla.innerHTML = `
+        <tr>
+          <th style="width:50px;">N°</th>
+          <th>Descripción</th>
+          <th>Modelo</th>
+          <th>Marca</th>
+          <th>Color</th>
+          <th>Estado</th>
+          <th>Servicio</th>
+          <th style="width:110px;">Acciones</th>
+        </tr>`;
+      tbody.innerHTML = '';
+      let n = 1;
+      for (const b of seleccionados.values()) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${n++}</td>
+          <td>${escapeHtml(b.descripcion)}</td>
+          <td>${escapeHtml(b.modelo || '—')}</td>
+          <td>${escapeHtml(b.marca || '—')}</td>
+          <td>${escapeHtml(b.color || '—')}</td>
+          <td>${escapeHtml(b.estado || '—')}</td>
+          <td>${escapeHtml(b.ubicacion || '—')}</td>
+          <td class="row-actions"><button class="quitar" data-id="${b.id}">✕ Quitar</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+      tbody.querySelectorAll('.quitar').forEach(btn =>
+        btn.addEventListener('click', () => {
+          seleccionados.delete(Number(btn.dataset.id));
+          actualizarBarra();
+          renderTabla();
+          mostrarResultados(buscador.value);
+        }));
+      paginacion.innerHTML = '';
+      return;
+    }
+
+    theadTabla.innerHTML = `
+      <tr>
+        <th>N°</th>
+        <th>Tipo</th>
+        <th>Fecha</th>
+        <th>Entrega</th>
+        <th>Recibe</th>
+        <th>Estado</th>
+        <th>Observaciones</th>
+        <th style="width:180px;text-align:center;">Acciones</th>
+      </tr>`;
+
+    if (actas.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:#64748b;">
+        No hay actas registradas. Usa el buscador de arriba para seleccionar bienes y emitir una.
+      </td></tr>`;
+      paginacion.innerHTML = '';
+      return;
+    }
+
+    const totalPaginas = Math.max(1, Math.ceil(actas.length / POR_PAGINA));
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    const inicio = (paginaActual - 1) * POR_PAGINA;
+    const fin = inicio + POR_PAGINA;
+    const pagina = actas.slice(inicio, fin);
+
+    tbody.innerHTML = '';
+    pagina.forEach(a => {
+      const tipoTxt = a.tipo === 'ENTREGA' ? 'ENTREGA' : 'DEVOLUCIÓN';
+      const tipoBg = a.tipo === 'ENTREGA' ? '#1d6fb3' : '#6f8f1f';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(a.numero)}</td>
+        <td><span class="badge" style="background:${tipoBg};">${tipoTxt}</span></td>
+        <td>${escapeHtml(a.fecha)}</td>
+        <td>${escapeHtml(a.entrega_nombre || '—')}</td>
+        <td>${escapeHtml(a.recibe_nombre || '—')}</td>
+        <td>${escapeHtml(a.estado)}</td>
+        <td>${escapeHtml(a.observaciones || '')}</td>
+        <td class="row-actions" style="text-align:center;display:flex;gap:.35rem;justify-content:center;">
+          <button class="btn-ver" data-id="${a.id}">👁️ Ver</button>
+          <button class="btn-imprimir" data-id="${a.id}">🖨️ Imprimir</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.btn-ver').forEach(btn =>
+      btn.addEventListener('click', () => imprimirActa(btn.dataset.id, false)));
+    tbody.querySelectorAll('.btn-imprimir').forEach(btn =>
+      btn.addEventListener('click', () => imprimirActa(btn.dataset.id, true)));
+
+    renderPaginacion(totalPaginas, inicio, fin);
+  }
+
+  function renderPaginacion(totalPaginas, inicio, fin) {
+    const total = actas.length;
+    const mostrados = Math.min(fin, total);
+    let html = `<div class="info">Mostrando <strong>${inicio + 1}</strong>–<strong>${mostrados}</strong> de <strong>${total}</strong> acta(s)</div>`;
+    html += `<div class="controles">`;
+    html += `<button ${paginaActual === 1 ? 'disabled' : ''} data-p="1">«</button>`;
+    html += `<button ${paginaActual === 1 ? 'disabled' : ''} data-p="${paginaActual - 1}">‹</button>`;
+    for (let i = 1; i <= totalPaginas; i++) {
+      if (i === 1 || i === totalPaginas || Math.abs(i - paginaActual) <= 1) {
+        html += `<button class="${i === paginaActual ? 'activo' : ''}" data-p="${i}">${i}</button>`;
+      } else if (i === 2 && paginaActual > 3) {
+        html += `<span class="ellipsis">…</span>`;
+      } else if (i === totalPaginas - 1 && paginaActual < totalPaginas - 2) {
+        html += `<span class="ellipsis">…</span>`;
+      }
+    }
+    html += `<button ${paginaActual === totalPaginas ? 'disabled' : ''} data-p="${paginaActual + 1}">›</button>`;
+    html += `<button ${paginaActual === totalPaginas ? 'disabled' : ''} data-p="${totalPaginas}">»</button>`;
+    html += `</div>`;
+    paginacion.innerHTML = html;
+    paginacion.querySelectorAll('button[data-p]').forEach(btn =>
+      btn.addEventListener('click', () => {
+        const p = Number(btn.dataset.p);
+        if (p >= 1 && p <= totalPaginas && p !== paginaActual) {
+          paginaActual = p;
+          renderTabla();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }));
+  }
+
+  function mostrarResultados(texto) {
+    const t = (texto || '').trim().toLowerCase();
+    if (!t) { resultados.classList.remove('activo'); resultados.innerHTML = ''; return; }
+
+    const coincidencias = bienes.filter(b =>
+      (b.descripcion || '').toLowerCase().includes(t) ||
+      (b.codigo_interno || '').toLowerCase().includes(t) ||
+      (b.codigo_patrimonio || '').toLowerCase().includes(t) ||
+      (b.serie || '').toLowerCase().includes(t) ||
+      (b.marca || '').toLowerCase().includes(t) ||
+      (b.modelo || '').toLowerCase().includes(t)
+    ).slice(0, 30);
+
+    resultados.innerHTML = '';
+    if (coincidencias.length === 0) {
+      resultados.innerHTML = '<div class="vacio">Sin coincidencias</div>';
+      resultados.classList.add('activo');
+      return;
+    }
+
+    coincidencias.forEach(b => {
+      const div = document.createElement('div');
+      const yaEsta = seleccionados.has(b.id);
+      div.className = 'item' + (yaEsta ? ' ya-selec' : '');
+      div.innerHTML = `
+        <div style="flex:1;">
+          <div class="desc">${escapeHtml(b.descripcion)}</div>
+          <div class="meta">
+            ${escapeHtml(b.codigo_interno || '—')} · ${escapeHtml(b.marca || '—')} ${escapeHtml(b.modelo || '')} · ${escapeHtml(b.estado || '—')} · 📍 ${escapeHtml(b.ubicacion || '—')}
+          </div>
+        </div>
+        <span class="tag">${b.nro ?? ''}</span>`;
+      if (!yaEsta) {
+        div.addEventListener('click', () => {
+          seleccionados.set(b.id, b);
+          actualizarBarra();
+          renderTabla();
+          mostrarResultados(buscador.value);
+        });
+      }
+      resultados.appendChild(div);
+    });
+    resultados.classList.add('activo');
+  }
+
+  buscador.addEventListener('input', e => mostrarResultados(e.target.value));
+  buscador.addEventListener('focus', () => { if (buscador.value.trim()) mostrarResultados(buscador.value); });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.panel') && !e.target.closest('.resultados')) resultados.classList.remove('activo');
+  }, { capture: true });
+
+  function actualizarBarra() {
+    contadorSel.textContent = seleccionados.size;
+    barraSel.style.display = seleccionados.size > 0 ? 'flex' : 'none';
+    btnLimpiar.style.display = seleccionados.size > 0 ? 'inline-block' : 'none';
+  }
+
+  document.getElementById('btnCancelarSel').addEventListener('click', async () => {
+    if (seleccionados.size === 0) return;
+    const ok = await UI.confirm('¿Quitar todos los bienes seleccionados?');
+    if (!ok) return;
+    seleccionados.clear();
+    actualizarBarra();
+    renderTabla();
+    mostrarResultados(buscador.value);
+  });
+
+  btnLimpiar.addEventListener('click', async () => {
+    if (seleccionados.size === 0) return;
+    const ok = await UI.confirm('¿Quitar todos los bienes seleccionados?');
+    if (!ok) return;
+    seleccionados.clear();
+    actualizarBarra();
+    renderTabla();
+    mostrarResultados(buscador.value);
+  });
+
+  document.getElementById('btnVerActa').addEventListener('click', async () => {
+    if (seleccionados.size === 0) return;
+    const tpl = document.getElementById('tplUltimaActa').content.cloneNode(true);
+    document.body.appendChild(tpl);
+    const modal = document.body.lastElementChild;
+    const cont = modal.querySelector('#uaContenido');
+    const sub = modal.querySelector('#uaSubtitulo');
+
+    sub.textContent = `${seleccionados.size} bien(es) seleccionado(s)`;
+    cont.innerHTML = '<div class="ua-vacio"><span class="icono">⏳</span>Cargando actas...</div>';
+
+    try {
+      const promesas = [...seleccionados.keys()].map(id => api(`/api/bienes/${id}/ultima-acta`).catch(() => null));
+      const respuestas = await Promise.all(promesas);
+      const conActa = respuestas.filter(r => r && r.ultima);
+      const sinActa = respuestas.filter(r => r && !r.ultima);
+
+      if (conActa.length === 0) {
+        cont.innerHTML = `<div class="ua-vacio"><span class="icono">📭</span>Ninguno de los bienes seleccionados tiene actas emitidas aún.</div>`;
+      } else {
+        let html = `<div style="background:#eff6ff;border-left:4px solid #1d6fb3;padding:.75rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:.85rem;color:#1e3a8a;">
+          <strong>${conActa.length}</strong> de <strong>${seleccionados.size}</strong> bien(es) tienen actas previas.
+          ${sinActa.length > 0 ? `<br>⚠️ ${sinActa.length} bien(es) <strong>NO</strong> tienen actas previas.` : ''}
+        </div>`;
+
+        conActa.forEach(({ bien, ultima }) => {
+          const tipoTxt = ultima.tipo === 'ENTREGA' ? 'ENTREGA' : 'DEVOLUCIÓN';
+          const tipoBg = ultima.tipo === 'ENTREGA' ? '#1d6fb3' : '#6f8f1f';
+          const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+          let fechaLarga = ultima.fecha;
+          try {
+            const d = new Date(ultima.fecha + 'T00:00:00');
+            fechaLarga = `${String(d.getDate()).padStart(2,'0')} de ${meses[d.getMonth()]} del ${d.getFullYear()}`;
+          } catch {}
+
+          html += `
+            <div class="ua-item">
+              <div class="ua-info">
+                <div class="ua-numero">📄 ${escapeHtml(ultima.numero)} <span class="ua-badge" style="background:${tipoBg};margin-left:.5rem;">${tipoTxt}</span></div>
+                <div class="ua-bien"><strong>Bien:</strong> ${escapeHtml(bien.descripcion)}${bien.codigo_interno ? ` · <strong>Código:</strong> ${escapeHtml(bien.codigo_interno)}` : ''}</div>
+                <div class="ua-meta">
+                  <span class="ua-fecha">📅 ${escapeHtml(fechaLarga)}</span>
+                  <span>📤 <strong>Entrega:</strong> ${escapeHtml(ultima.entrega_nombre || '—')}</span>
+                  <span>📥 <strong>Recibe:</strong> ${escapeHtml(ultima.recibe_nombre || '—')}</span>
+                </div>
+              </div>
+            </div>`;
+        });
+        cont.innerHTML = html;
+      }
+    } catch (err) {
+      cont.innerHTML = `<div class="ua-vacio" style="color:#c0392b;">⚠️ ${escapeHtml(err.message)}</div>`;
+    }
+    activarCierreModal(modal);
+  });
+
+  document.getElementById('btnEmitir').addEventListener('click', async () => {
+    if (seleccionados.size === 0) return;
+
+    if (!encargadoActivo) {
+      await UI.warning(
+        'No hay un Responsable de Patrimonio designado.\n\nVe al módulo "🧑‍💼 Responsables" y designa uno antes de emitir actas.',
+        'Sin responsable'
+      );
+      return;
+    }
+
+    const tpl = document.getElementById('tplEmitir').content.cloneNode(true);
+    document.body.appendChild(tpl);
+    const modal = document.body.lastElementChild;
+
+    const [profs, cat] = await Promise.all([api('/api/profesionales'), api('/api/catalogos')]);
+
+    const selEnt = modal.querySelector('#selEnt');
+    selEnt.innerHTML = '';
+    const responsable = profs.find(p => p.id === encargadoActivo.profesional_id);
+    const responsableNombre = encargadoActivo.profesional || (responsable ? `${responsable.nombres} ${responsable.apellidos}` : null);
+
+    if (responsable) {
+      const o = document.createElement('option');
+      o.value = responsable.id;
+      o.textContent = `${responsable.nombres} ${responsable.apellidos} (${responsable.profesion})`;
+      o.selected = true;
+      selEnt.appendChild(o);
+    } else {
+      const o = document.createElement('option');
+      o.value = encargadoActivo.profesional_id || '';
+      o.textContent = responsableNombre || '—';
+      o.selected = true;
+      selEnt.appendChild(o);
+    }
+
+    const selRec = modal.querySelector('#selRec');
+    selRec.innerHTML = '<option value="">— Seleccione —</option>';
+    profs.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = `${p.nombres} ${p.apellidos} (${p.profesion})`;
+      selRec.appendChild(o);
+    });
+
+    const selEst = modal.querySelector('#selEst');
+    selEst.innerHTML = '<option value="">—</option>';
+    cat.establecimientos.forEach(e => {
+      const o = document.createElement('option');
+      o.value = e.id;
+      o.textContent = e.nombre;
+      selEst.appendChild(o);
+    });
+
+    if (!(USUARIO.rol === 'admin' && !USUARIO.establecimiento_id) && USUARIO.establecimiento_id) {
+      selEst.value = USUARIO.establecimiento_id;
+      selEst.disabled = true;
+    }
+
+    const selTipo = modal.querySelector('[name="tipo"]');
+    const lblRecibe = modal.querySelector('#lblRecibe');
+    function actualizarEtiquetaRecibe() {
+      if (selTipo.value === 'RECEPCION') lblRecibe.textContent = 'Personal que devuelve (Personal) *';
+      else lblRecibe.textContent = 'Recibe (Personal) *';
+    }
+    selTipo.addEventListener('change', actualizarEtiquetaRecibe);
+    actualizarEtiquetaRecibe();
+
+    const anio = new Date().getFullYear();
+    const correlativo = String(actas.length + 1).padStart(3, '0');
+    modal.querySelector('[name="numero"]').value = `ACT-${anio}-${correlativo}`;
+    modal.querySelector('[name="fecha"]').value = new Date().toISOString().slice(0,10);
+
+    activarCierreModal(modal);
+
+    modal.querySelector('#formEmitir').addEventListener('submit', async e => {
+      e.preventDefault();
+      const payload = Object.fromEntries(new FormData(e.target).entries());
+      payload.entrega_id = encargadoActivo.profesional_id || null;
+      payload.recibe_id = payload.recibe_id ? Number(payload.recibe_id) : null;
+      payload.establecimiento_id = payload.establecimiento_id ? Number(payload.establecimiento_id) : null;
+
+      const esAdminGlobal = USUARIO.rol === 'admin' && !USUARIO.establecimiento_id;
+      if (!esAdminGlobal && USUARIO.establecimiento_id) {
+        payload.establecimiento_id = USUARIO.establecimiento_id;
+      }
+
+      if (!payload.recibe_id) {
+        UI.warning('Debes seleccionar al personal.');
+        return;
+      }
+
+      payload.bienes = [...seleccionados.keys()].map(id => ({ id }));
+
+      try {
+        const r = await api('/api/actas', { method: 'POST', body: payload });
+        modal.remove();
+        seleccionados.clear();
+        actualizarBarra();
+        buscador.value = '';
+        resultados.classList.remove('activo');
+        await cargar();
+        UI.success('Acta emitida correctamente.');
+        if (r?.id) imprimirActa(r.id, false);
+      } catch (err) {
+        UI.error(err.message, 'Error al emitir acta');
+      }
+    });
+  });
+
+  async function imprimirActa(id, autoPrint = false) {
+    const acta = await api(`/api/actas/${id}`);
+    const detalle = acta.detalle || [];
+
+    const tipo = acta.tipo === 'ENTREGA'
+      ? 'ACTA DE ENTREGA DE BIENES PATRIMONIALES Y FUNGIBLES DEL C.S. PAUCARA'
+      : 'ACTA DE DEVOLUCIÓN DE BIENES PATRIMONIALES Y FUNGIBLES DEL C.S. PAUCARA';
+
+    const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+    let fechaLarga = acta.fecha;
+    try {
+      const d = new Date(acta.fecha + 'T00:00:00');
+      fechaLarga = `${String(d.getDate()).padStart(2,'0')} de ${meses[d.getMonth()]} del ${d.getFullYear()}`;
+    } catch {}
+
+    const responsableNom = encargadoActivo?.profesional || acta.entrega_nombre || '_______________________';
+    const responsableCargo = encargadoActivo?.cargo || 'RESPONSABLE DE PATRIMONIO';
+    const entregaNom = acta.entrega_nombre || responsableNom || '_______________________';
+    const entregaDni = acta.entrega_dni ? ` (DNI: ${acta.entrega_dni})` : '';
+    const recibeNom = acta.recibe_nombre || '_______________________';
+    const recibeProf = acta.recibe_profesion ? ` - ${acta.recibe_profesion}` : '';
+
+    const filas = detalle.map((d, i) => `
+      <tr>
+        <td class="centro">${i + 1}</td>
+        <td>${escapeHtml(d.descripcion || '')}</td>
+        <td>${escapeHtml(d.modelo || '—')}</td>
+        <td>${escapeHtml(d.marca || '—')}</td>
+        <td>${escapeHtml(d.color || '—')}</td>
+        <td class="centro">${escapeHtml(d.estado || '—')}</td>
+        <td>${escapeHtml(d.ubicacion || d.servicio || '—')}</td>
+      </tr>`).join('');
+
+    let parrafo = '', firmaIzqNombre = '', firmaIzqRol = '', firmaDerNombre = '', firmaDerRol = '';
+
+    if (acta.tipo === 'ENTREGA') {
+      parrafo = `En el <strong>${escapeHtml(acta.establecimiento || 'C.S. PAUCARA')}</strong>, siendo el día <strong>${escapeHtml(fechaLarga)}</strong>, el(la) <strong>${escapeHtml(responsableCargo)}</strong> <strong>${escapeHtml(responsableNom)}</strong>, procede a <strong>ENTREGAR</strong> los bienes patrimoniales y fungibles al(la) <strong>${escapeHtml(recibeNom)}</strong>${escapeHtml(recibeProf)}, conforme al siguiente detalle:`;
+      firmaIzqNombre = `${entregaNom}${entregaDni}`;
+      firmaIzqRol = responsableCargo;
+      firmaDerNombre = `${recibeNom}${recibeProf}`;
+      firmaDerRol = 'RECIBE CONFORME';
+    } else {
+      parrafo = `En el <strong>${escapeHtml(acta.establecimiento || 'C.S. PAUCARA')}</strong>, siendo el día <strong>${escapeHtml(fechaLarga)}</strong>, el(la) <strong>${escapeHtml(recibeNom)}</strong>${escapeHtml(recibeProf)}, procede a <strong>DEVOLVER</strong> los bienes patrimoniales y fungibles al(la) <strong>${escapeHtml(responsableCargo)}</strong> <strong>${escapeHtml(responsableNom)}</strong>, conforme al siguiente detalle:`;
+      firmaIzqNombre = `${recibeNom}${recibeProf}`;
+      firmaIzqRol = 'DEVUELVE CONFORME';
+      firmaDerNombre = `${entregaNom}${entregaDni}`;
+      firmaDerRol = responsableCargo;
+    }
+
+    const html = `
+      <div class="acta-doc">
+        <div class="acta-titulo">${escapeHtml(tipo)}</div>
+        <div class="acta-numero"><strong>N°:</strong> ${escapeHtml(acta.numero)} &nbsp;·&nbsp; <strong>Fecha:</strong> ${escapeHtml(fechaLarga)}</div>
+        <div class="acta-parrafo">${parrafo}</div>
+        <div class="acta-tabla-wrap">
+          <table class="acta-tabla">
+            <thead><tr>
+              <th style="width:7%;">N°</th><th style="width:35%;">DESCRIPCIÓN</th>
+              <th style="width:12%;">MODELO</th><th style="width:11%;">MARCA</th>
+              <th style="width:10%;">COLOR</th><th style="width:11%;">ESTADO</th>
+              <th style="width:14%;">SERVICIO</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>
+        <div class="acta-cierre">Se concluye la presente acta y en señal de conformidad firman los presentes a continuación.</div>
+        <div class="acta-firmas">
+          <div class="firma"><div class="linea"></div><div class="nombre">${escapeHtml(firmaIzqNombre)}</div><div class="rol">${escapeHtml(firmaIzqRol)}</div></div>
+          <div class="firma"><div class="linea"></div><div class="nombre">${escapeHtml(firmaDerNombre)}</div><div class="rol">${escapeHtml(firmaDerRol)}</div></div>
+        </div>
+      </div>`;
+
+    document.querySelectorAll('.hoja-imprimible').forEach(el => el.remove());
+
+    const tpl = document.getElementById('tplImpresion').content.cloneNode(true);
+    document.body.appendChild(tpl);
+    const cont = document.body.lastElementChild;
+    cont.id = 'hojaImprimible_' + id;
+    cont.innerHTML = html;
+    cont.classList.add('activo');
+
+    const btnCerrar = document.createElement('button');
+    btnCerrar.className = 'cerrar-preview';
+    btnCerrar.textContent = '✕ Cerrar';
+    btnCerrar.addEventListener('click', () => cont.remove());
+    cont.appendChild(btnCerrar);
+
+    const btnPrint = document.createElement('button');
+    btnPrint.className = 'btn-print-preview';
+    btnPrint.textContent = '🖨️ Imprimir';
+    btnPrint.addEventListener('click', () => window.print());
+    cont.appendChild(btnPrint);
+
+    if (autoPrint) setTimeout(() => window.print(), 300);
+  }
+
+  await cargar();
+  actualizarBarra();
+</script>
+</body>
+</html>

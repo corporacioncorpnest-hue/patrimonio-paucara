@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kardex de Almacén</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/sidebar.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <aside class="glass sidebar">
+    <div class="sidebar-marca">
+      <div class="logo-mini-wrap">
+        <div class="logo-mini-anillo a1"></div>
+        <div class="logo-mini-anillo a2"></div>
+        <div class="logo-mini-particula p1"></div>
+        <div class="logo-mini-particula p2"></div>
+        <div class="logo-mini-halo"></div>
+        <div class="logo-mini-central">
+          <img src="img/logo.png" alt="Micro Red Paucará"
+               onerror="this.style.display='none'; this.parentElement.classList.add('sin-logo');">
+          <div class="logo-mini-fallback">✚</div>
+        </div>
+      </div>
+      <h2 class="sidebar-titulo">Patrimonio</h2>
+    </div>
+
+    <a href="dashboard.html" class="sidebar-dashboard">
+      <span>📊</span>
+      <span>Dashboard</span>
+    </a>
+
+    <div class="sidebar-modulo" data-modulo="patrimonio">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">🏛️</span>
+        <span class="modulo-titulo">Patrimonio</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="bienes.html">🏷️ Bienes</a>
+        <a href="actas.html">📄 Actas</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo abierto" data-modulo="almacen">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">📦</span>
+        <span class="modulo-titulo">Almacén</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="catalogo-suministros.html">📋 Catálogo de Suministros</a>
+        <a href="ingresos.html">📥 Ingresos</a>
+        <a href="salidas.html">📤 Salidas</a>
+        <a href="stock.html">📊 Stock</a>
+        <a href="kardex.html" class="active">🗂️ Kardex</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="configuracion">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">⚙️</span>
+        <span class="modulo-titulo">Configuración</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="establecimientos.html">🏥 Establecimientos</a>
+        <a href="profesionales.html">👥 Profesionales</a>
+        <a href="encargados.html">🧑‍💼 Responsables</a>
+        <a href="usuarios.html">👤 Usuarios</a>
+        <a href="reportes.html">📈 Reportes</a>
+      </div>
+    </div>
+
+    <a href="#" id="logout" style="margin-top:auto;">🚪 Salir</a>
+  </aside>
+
+  <main class="main">
+    <div class="glass topbar">
+      <h1>Kardex de Suministros</h1>
+      <span class="user">👤 <span class="user-nombre"></span></span>
+    </div>
+
+    <div class="glass panel" style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+      <select id="selSuministro" style="flex:1;min-width:260px;padding:.55rem .8rem;border:1px solid #cbd5e1;border-radius:8px;">
+        <option value="">— Seleccione un suministro —</option>
+      </select>
+      <input id="q" placeholder="🔍 Buscar en movimientos..."
+             style="flex:1;min-width:220px;padding:.55rem .8rem;border:1px solid #cbd5e1;border-radius:8px;" />
+    </div>
+
+    <div class="glass tabla-wrap">
+      <table class="inventario" style="min-width:auto;">
+        <thead>
+          <tr>
+            <th style="width:50px;">#</th>
+            <th style="width:110px;">Fecha</th>
+            <th style="width:100px;">Tipo</th>
+            <th style="width:90px;text-align:center;">Cantidad</th>
+            <th style="width:90px;text-align:center;">Saldo</th>
+            <th>Establecimiento</th>
+            <th>Usuario</th>
+            <th>Estado</th>
+            <th>Observación</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">Seleccione un suministro para ver su kardex.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { api, protegerPagina, logout, escapeHtml } from './js/api.js';
+  await protegerPagina();
+  logout();
+
+  let kardexData = [];
+
+  function normalizar(txt) {
+    return String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  async function cargarSuministros() {
+    const sum = await api('/api/suministros');
+    const sel = document.getElementById('selSuministro');
+    sum.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id;
+      o.textContent = `${s.codigo || ''} · ${s.descripcion}`;
+      sel.appendChild(o);
+    });
+  }
+
+  async function cargarKardex(id) {
+    const tb = document.getElementById('tbody');
+    if (!id) {
+      kardexData = [];
+      tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">Seleccione un suministro para ver su kardex.</td></tr>';
+      return;
+    }
+    kardexData = await api('/api/almacen/kardex/' + id);
+    render();
+  }
+
+  function render() {
+    const tb = document.getElementById('tbody');
+    tb.innerHTML = '';
+    const q = normalizar(document.getElementById('q').value.trim());
+
+    const filtrados = kardexData.filter(m => {
+      if (!q) return true;
+      return ['tipo','establecimiento','usuario','estado','observacion']
+        .some(k => normalizar(m[k]).includes(q));
+    });
+
+    if (filtrados.length === 0) {
+      tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">Sin movimientos que coincidan.</td></tr>';
+      return;
+    }
+
+    filtrados.forEach((m, idx) => {
+      const esIngreso = m.tipo === 'INGRESO';
+      const fecha = esIngreso ? (m.fecha_ingreso || m.creado_en) : (m.fecha_salida || m.creado_en);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>${escapeHtml(String(fecha).slice(0,10))}</td>
+        <td><span style="background:${esIngreso ? '#dcfce7' : '#fee2e2'};color:${esIngreso ? '#166534' : '#991b1b'};padding:.2rem .6rem;border-radius:999px;font-size:.72rem;font-weight:700;">${m.tipo}</span></td>
+        <td style="text-align:center;font-weight:700;color:${esIngreso ? '#16a34a' : '#dc2626'};">${esIngreso ? '+' : '-'}${m.cantidad}</td>
+        <td style="text-align:center;font-weight:800;color:#1d6fb3;">${m.saldo}</td>
+        <td>${escapeHtml(m.establecimiento || '—')}</td>
+        <td>${escapeHtml(m.usuario || '—')}</td>
+        <td>${escapeHtml(m.estado || '—')}</td>
+        <td>${escapeHtml(m.observacion || '')}</td>
+      `;
+      tb.appendChild(tr);
+    });
+  }
+
+  document.getElementById('selSuministro').addEventListener('change', e => cargarKardex(e.target.value));
+  document.getElementById('q').addEventListener('input', render);
+
+  await cargarSuministros();
+</script>
+</body>
+</html>

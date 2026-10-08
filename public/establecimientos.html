@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Establecimientos · Patrimonio Paucará</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/sidebar.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <aside class="glass sidebar">
+    <div class="sidebar-marca">
+      <div class="logo-mini-wrap">
+        <div class="logo-mini-anillo a1"></div>
+        <div class="logo-mini-anillo a2"></div>
+        <div class="logo-mini-particula p1"></div>
+        <div class="logo-mini-particula p2"></div>
+        <div class="logo-mini-halo"></div>
+        <div class="logo-mini-central">
+          <img src="img/logo.png" alt="Micro Red Paucará"
+               onerror="this.style.display='none'; this.parentElement.classList.add('sin-logo');">
+          <div class="logo-mini-fallback">✚</div>
+        </div>
+      </div>
+      <h2 class="sidebar-titulo">Patrimonio</h2>
+    </div>
+
+    <a href="dashboard.html" class="sidebar-dashboard">
+      <span>📊</span>
+      <span>Dashboard</span>
+    </a>
+
+    <div class="sidebar-modulo" data-modulo="patrimonio">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">🏛️</span>
+        <span class="modulo-titulo">Patrimonio</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="bienes.html">🏷️ Bienes</a>
+        <a href="actas.html">📄 Actas</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="almacen">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">📦</span>
+        <span class="modulo-titulo">Almacén</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="catalogo-suministros.html">📋 Catálogo de Suministros</a>
+        <a href="ingresos.html">📥 Ingresos</a>
+        <a href="salidas.html">📤 Salidas</a>
+        <a href="stock.html">📊 Stock</a>
+        <a href="kardex.html">🗂️ Kardex</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo abierto" data-modulo="configuracion">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">⚙️</span>
+        <span class="modulo-titulo">Configuración</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="establecimientos.html" class="active">🏥 Establecimientos</a>
+        <a href="profesionales.html">👥 Profesionales</a>
+        <a href="encargados.html">🧑‍💼 Responsables</a>
+        <a href="usuarios.html">👤 Usuarios</a>
+        <a href="reportes.html">📈 Reportes</a>
+      </div>
+    </div>
+
+    <a href="#" id="logout" style="margin-top:auto;">🚪 Salir</a>
+  </aside>
+
+  <main class="main">
+    <div class="glass topbar">
+      <div>
+        <h1>Establecimientos de Salud</h1>
+        <p style="font-size:.82rem;opacity:.85;margin-top:.15rem;">
+          Gestión de los centros y puestos de salud de la Red
+        </p>
+      </div>
+      <span class="user">👤 <span class="user-nombre"></span></span>
+    </div>
+
+    <div class="glass panel" style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;">
+      <input id="q" placeholder="🔍 Buscar por código o nombre..."
+             style="flex:1;min-width:220px;padding:.55rem .8rem;border:1px solid #cbd5e1;border-radius:8px;" />
+      <button class="btn btn-primary" id="btnNuevo">+ Nuevo establecimiento</button>
+    </div>
+
+    <div class="glass tabla-wrap">
+      <table class="inventario" style="min-width:auto;">
+        <thead>
+          <tr>
+            <th style="width:60px;">#</th>
+            <th style="width:150px;">Código</th>
+            <th>Nombre del establecimiento</th>
+            <th style="width:130px;">Bienes</th>
+            <th style="width:130px;">Usuarios</th>
+            <th style="width:150px;text-align:center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<template id="tplForm">
+  <div class="modal-backdrop">
+    <form class="glass modal" id="formEst" style="max-width:560px;">
+      <button type="button" class="btn-close-modal" data-close title="Cerrar">✕</button>
+      <h2 id="tituloModal">Nuevo establecimiento</h2>
+
+      <div style="background:#eff6ff;border-left:4px solid #1d6fb3;padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.85rem;color:#1e3a8a;">
+        ℹ️ El <strong>código se asigna automáticamente</strong>. Solo escribe el nombre del establecimiento.
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>Código (automático) 🔒</label>
+          <input name="codigo" id="inpCodigo" readonly
+                 style="background:#f1f5f9;color:#64748b;cursor:not-allowed;font-weight:700;font-family:monospace;" />
+        </div>
+        <div>
+          <label>Nombre *</label>
+          <input name="nombre" required placeholder="Ej: CENTRO DE SALUD PAUCARA" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close style="color:#1f2a37;">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<style>
+  .row-actions button { border: none; padding: .4rem .65rem; border-radius: 8px; font-size: .85rem; cursor: pointer; transition: all .15s; font-weight: 600; margin: 0 .15rem; }
+  .row-actions .edit { background: #dbeafe; color: #1d6fb3; }
+  .row-actions .edit:hover { background: #bfdbfe; }
+  .row-actions .del { background: #fee2e2; color: #991b1b; }
+  .row-actions .del:hover { background: #fecaca; }
+  .codigo-badge { font-family: monospace; background: #eff6ff; color: #1d6fb3; padding: .25rem .55rem; border-radius: 6px; font-weight: 700; font-size: .78rem; letter-spacing: .5px; }
+</style>
+
+<script type="module">
+  import { api, protegerPagina, logout, escapeHtml } from './js/api.js';
+  import UI from './js/ui.js';
+  const me = await protegerPagina();
+  logout();
+
+  if (me.rol !== 'admin') {
+    await UI.warning('Solo el administrador puede acceder a este módulo');
+    location.href = 'dashboard.html';
+  }
+
+  function activarCierreModal(modalEl) {
+    modalEl.querySelectorAll('[data-close]').forEach(btn =>
+      btn.addEventListener('click', () => modalEl.remove()));
+    modalEl.addEventListener('click', e => { if (e.target === modalEl) e.stopPropagation(); });
+    const onEsc = e => { if (e.key === 'Escape') { modalEl.remove(); document.removeEventListener('keydown', onEsc); } };
+    document.addEventListener('keydown', onEsc);
+  }
+
+  let establecimientos = [];
+  let editandoId = null;
+
+  async function cargar() {
+    const [lista, bienes] = await Promise.all([
+      api('/api/establecimientos'),
+      api('/api/bienes')
+    ]);
+
+    const conteo = {};
+    bienes.forEach(b => { const eid = b.establecimiento_id || 0; conteo[eid] = (conteo[eid] || 0) + 1; });
+
+    let usuarios = [];
+    try { usuarios = await api('/api/usuarios'); } catch {}
+
+    const conteoUsuarios = {};
+    usuarios.forEach(u => { if (u.establecimiento_id) conteoUsuarios[u.establecimiento_id] = (conteoUsuarios[u.establecimiento_id] || 0) + 1; });
+
+    establecimientos = lista;
+    render(conteo, conteoUsuarios);
+  }
+
+  function render(conteoBienes = {}, conteoUsuarios = {}) {
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    const filtrados = establecimientos.filter(e => {
+      if (!q) return true;
+      return (e.codigo || '').toLowerCase().includes(q) || (e.nombre || '').toLowerCase().includes(q);
+    });
+
+    const tb = document.getElementById('tbody');
+    tb.innerHTML = '';
+    if (filtrados.length === 0) {
+      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:#64748b;">No hay establecimientos.</td></tr>';
+      return;
+    }
+
+    filtrados.forEach((e, idx) => {
+      const nb = conteoBienes[e.id] || 0;
+      const nu = conteoUsuarios[e.id] || 0;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:700;color:#64748b;">${idx + 1}</td>
+        <td><span class="codigo-badge">${escapeHtml(e.codigo)}</span></td>
+        <td style="font-weight:600;">${escapeHtml(e.nombre)}</td>
+        <td><span style="background:#dcfce7;color:#166534;padding:.2rem .6rem;border-radius:999px;font-size:.72rem;font-weight:700;">${nb} bien(es)</span></td>
+        <td><span style="background:#fef3c7;color:#92400e;padding:.2rem .6rem;border-radius:999px;font-size:.72rem;font-weight:700;">${nu} usuario(s)</span></td>
+        <td class="row-actions" style="text-align:center;">
+          <button class="edit" data-id="${e.id}" title="Editar">✏️ Editar</button>
+          <button class="del" data-id="${e.id}" title="Eliminar">🗑️</button>
+        </td>`;
+      tb.appendChild(tr);
+    });
+
+    tb.querySelectorAll('.edit').forEach(btn => btn.addEventListener('click', () => abrirModal(establecimientos.find(x => x.id == btn.dataset.id))));
+    tb.querySelectorAll('.del').forEach(btn => btn.addEventListener('click', () => eliminar(establecimientos.find(x => x.id == btn.dataset.id))));
+  }
+
+  async function eliminar(e) {
+    if (!e) return;
+    const ok = await UI.confirm(
+      `¿Eliminar el establecimiento "${e.nombre}"?\n\nEsta acción no se puede deshacer.`,
+      'Confirmar eliminación',
+      { textoAceptar: 'Eliminar', tipo: 'error' }
+    );
+    if (!ok) return;
+    try {
+      await api('/api/establecimientos/' + e.id, { method: 'DELETE' });
+      UI.success('Establecimiento eliminado.');
+      await cargar();
+    } catch (err) { UI.error(err.message); }
+  }
+
+  async function abrirModal(est = null) {
+    editandoId = est?.id || null;
+    const tpl = document.getElementById('tplForm').content.cloneNode(true);
+    document.body.appendChild(tpl);
+    const modal = document.body.lastElementChild;
+    const inpCodigo = modal.querySelector('#inpCodigo');
+
+    if (est) {
+      modal.querySelector('#tituloModal').textContent = 'Editar establecimiento';
+      inpCodigo.value = est.codigo || '';
+      modal.querySelector('[name="nombre"]').value = est.nombre || '';
+    } else {
+      try {
+        const r = await api('/api/establecimientos/siguiente-codigo');
+        inpCodigo.value = r.codigo;
+      } catch { inpCodigo.value = 'EST-???'; }
+    }
+
+    activarCierreModal(modal);
+
+    modal.querySelector('#formEst').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const payload = Object.fromEntries(new FormData(ev.target).entries());
+      delete payload.codigo;
+      try {
+        if (editandoId) {
+          await api('/api/establecimientos/' + editandoId, { method: 'PUT', body: payload });
+          UI.success('Establecimiento actualizado.');
+        } else {
+          await api('/api/establecimientos', { method: 'POST', body: payload });
+          UI.success('Establecimiento creado.');
+        }
+        modal.remove();
+        await cargar();
+      } catch (err) { UI.error(err.message); }
+    });
+  }
+
+  document.getElementById('btnNuevo').addEventListener('click', () => abrirModal(null));
+  document.getElementById('q').addEventListener('input', () => cargar());
+
+  await cargar();
+</script>
+</body>
+</html>

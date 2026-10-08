@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard · Patrimonio Paucará</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/sidebar.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+<div class="app dashboard-app">
+
+  <aside class="glass sidebar">
+    <div class="sidebar-marca">
+      <div class="logo-mini-wrap">
+        <div class="logo-mini-anillo a1"></div>
+        <div class="logo-mini-anillo a2"></div>
+        <div class="logo-mini-particula p1"></div>
+        <div class="logo-mini-particula p2"></div>
+        <div class="logo-mini-halo"></div>
+        <div class="logo-mini-central">
+          <img src="img/logo.png" alt="Micro Red Paucará"
+               onerror="this.style.display='none'; this.parentElement.classList.add('sin-logo');">
+          <div class="logo-mini-fallback">✚</div>
+        </div>
+      </div>
+      <h2 class="sidebar-titulo">Patrimonio</h2>
+    </div>
+
+    <!-- ⬇️ DASHBOARD ARRIBA DE LOS MÓDULOS -->
+    <a href="dashboard.html" class="sidebar-dashboard active">
+      <span>📊</span>
+      <span>INICIO</span>
+    </a>
+
+    <div class="sidebar-modulo abierto" data-modulo="patrimonio">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">🏛️</span>
+        <span class="modulo-titulo">Patrimonio</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="bienes.html">🏷️ Bienes</a>
+        <a href="actas.html">📄 Actas</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="almacen">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">📦</span>
+        <span class="modulo-titulo">Almacén</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="catalogo-suministros.html">📋 Catálogo de Suministros</a>
+        <a href="ingresos.html">📥 Ingresos</a>
+        <a href="salidas.html">📤 Salidas</a>
+        <a href="stock.html">📊 Stock</a>
+        <a href="kardex.html">🗂️ Kardex</a>
+      </div>
+    </div>
+
+    <div class="sidebar-modulo" data-modulo="configuracion">
+      <button type="button" class="sidebar-modulo-btn">
+        <span class="modulo-icono">⚙️</span>
+        <span class="modulo-titulo">Configuración</span>
+        <span class="modulo-flecha">›</span>
+      </button>
+      <div class="sidebar-modulo-contenido">
+        <a href="establecimientos.html">🏥 Establecimientos</a>
+        <a href="profesionales.html">👥 Profesionales</a>
+        <a href="encargados.html">🧑‍💼 Responsables</a>
+        <a href="usuarios.html">👤 Usuarios</a>
+        <a href="reportes.html">📈 Reportes</a>
+      </div>
+    </div>
+
+    <a href="#" id="logout" style="margin-top:auto;">🚪 Salir</a>
+  </aside>
+
+  <main class="main dashboard-main">
+    <div class="glass topbar">
+      <div>
+        <h1>Panel de Control</h1>
+        <p id="reloj" class="reloj">📅 Cargando fecha y hora...</p>
+      </div>
+      <span class="user">👤 <span class="user-nombre"></span></span>
+    </div>
+
+    <div class="hero-carrusel" id="heroCarrusel">
+      <div class="hero-slides" id="heroSlides"></div>
+      <div class="hero-categorias">
+        <div class="categoria"><span class="cat-icono">🏥</span> EQUIPOS MÉDICOS</div>
+        <div class="categoria"><span class="cat-icono">🪑</span> MOBILIARIO</div>
+        <div class="categoria"><span class="cat-icono">💻</span> INFORMÁTICA</div>
+        <div class="categoria"><span class="cat-icono">📦</span> INVENTARIO</div>
+      </div>
+      <button class="hero-flecha hero-flecha-izq" id="btnPrev">‹</button>
+      <button class="hero-flecha hero-flecha-der" id="btnNext">›</button>
+      <div class="hero-dots" id="heroDots"></div>
+    </div>
+
+    <div class="grid-tarjetas">
+      <div class="tarjeta-mod tarjeta-azul">
+        <div class="tarjeta-glow"></div>
+        <div class="tarjeta-icono-mod">📦</div>
+        <div class="tarjeta-info">
+          <div class="tarjeta-label">Bienes Totales</div>
+          <div class="tarjeta-numero" id="tBienes">—</div>
+        </div>
+      </div>
+      <div class="tarjeta-mod tarjeta-verde">
+        <div class="tarjeta-glow"></div>
+        <div class="tarjeta-icono-mod">👥</div>
+        <div class="tarjeta-info">
+          <div class="tarjeta-label">Profesionales</div>
+          <div class="tarjeta-numero" id="tProf">—</div>
+        </div>
+      </div>
+      <div class="tarjeta-mod tarjeta-alerta" id="tarjetaVencer">
+        <div class="tarjeta-glow"></div>
+        <div class="tarjeta-icono-mod">🛠️</div>
+        <div class="tarjeta-info">
+          <div class="tarjeta-label">Equipos por Vencer</div>
+          <div class="tarjeta-numero" id="tVencer">—</div>
+          <div class="tarjeta-sub" id="tVencerSub">Mantenimiento ≤ 25 días</div>
+        </div>
+      </div>
+      <div class="tarjeta-mod tarjeta-violeta">
+        <div class="tarjeta-glow"></div>
+        <div class="tarjeta-icono-mod">🧑‍💼</div>
+        <div class="tarjeta-info">
+          <div class="tarjeta-label">Responsables Activos</div>
+          <div class="tarjeta-numero" id="tResp">—</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="footer-pagina">
+      © 2026 Micro Red de Salud Paucará · Red de Salud Acobamba
+    </p>
+  </main>
+</div>
+
+<style>
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+  .topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.75rem; letter-spacing: -.5px; }
+  .reloj { font-size: .85rem; opacity: .9; margin-top: .25rem; font-weight: 500; }
+
+  .sidebar-marca { display: flex; flex-direction: column; align-items: center; gap: .5rem; padding: .8rem 0 1.2rem; margin-bottom: .5rem; border-bottom: 1px solid rgba(255,255,255,.15); }
+  .logo-mini-wrap { position: relative; width: 90px; height: 90px; display: grid; place-items: center; }
+  .logo-mini-anillo { position: absolute; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+  .logo-mini-anillo.a1 { width: 88px; height: 88px; border: 1.5px dashed rgba(147,197,253,.55); animation: girar 16s linear infinite; }
+  .logo-mini-anillo.a2 { width: 70px; height: 70px; border: 1.5px solid transparent; border-top-color: #60a5fa; border-right-color: #fbbf24; border-bottom-color: #60a5fa; border-left-color: transparent; animation: girar-rev 10s linear infinite; box-shadow: 0 0 15px rgba(96,165,250,.4); }
+  .logo-mini-halo { position: absolute; width: 78px; height: 78px; border-radius: 50%; background: radial-gradient(circle, rgba(96,165,250,.35), transparent 70%); animation: pulso 3s ease-in-out infinite; }
+  .logo-mini-central { position: relative; z-index: 5; width: 56px; height: 56px; border-radius: 50%; background: #fff; padding: 3px; display: grid; place-items: center; box-shadow: 0 0 0 2px rgba(96,165,250,.3), 0 0 0 4px rgba(96,165,250,.12), 0 6px 18px rgba(0,0,0,.35); animation: pulso-suave 4s ease-in-out infinite; }
+  .logo-mini-central img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+  .logo-mini-fallback { position: absolute; inset: 3px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); color: #fff; font-size: 1.4rem; font-weight: 800; display: grid; place-items: center; }
+  .logo-mini-central:not(.sin-logo) .logo-mini-fallback { display: none; }
+  .logo-mini-particula { position: absolute; border-radius: 50%; top: 50%; left: 50%; }
+  .logo-mini-particula.p1 { width: 7px; height: 7px; margin-top: -3.5px; margin-left: -3.5px; background: #fbbf24; box-shadow: 0 0 10px #fbbf24; animation: orbitar-mini 8s linear infinite; }
+  .logo-mini-particula.p2 { width: 6px; height: 6px; margin-top: -3px; margin-left: -3px; background: #34d399; box-shadow: 0 0 10px #34d399; animation: orbitar-mini-rev 11s linear infinite; }
+  .sidebar-titulo { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; margin: 0; letter-spacing: .5px; text-align: center; }
+
+  /* ============================================================
+     ENLACE DASHBOARD (arriba de los módulos)
+     ============================================================ */
+  .sidebar-dashboard {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .95rem 1.1rem;
+    border-radius: 14px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: .3px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    margin-bottom: .5rem;
+    transition: background .2s, transform .15s, box-shadow .2s;
+  }
+  .sidebar-dashboard:hover {
+    background: rgba(255,255,255,.18);
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  }
+  .sidebar-dashboard.active {
+    background: rgba(255,255,255,.25);
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  }
+
+  .hero-carrusel { position: relative; width: 100%; height: 420px; border-radius: 22px; overflow: hidden; margin-bottom: 1.2rem; box-shadow: 0 20px 50px rgba(0,0,0,.28); animation: aparecer .5s ease; background: #0a1f33; }
+  .hero-slides { position: absolute; inset: 0; }
+  .hero-slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 1s ease; display: flex; align-items: center; padding: 0 5rem; }
+  .hero-slide.activo { opacity: 1; z-index: 2; }
+  .hero-slide::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,25,42,.97) 0%, rgba(10,35,60,.90) 45%, rgba(12,50,85,.55) 70%, rgba(15,60,102,.2) 100%); z-index: 1; }
+  .hero-contenido { position: relative; z-index: 3; max-width: 640px; color: #fff; animation: aparecer .8s ease; text-shadow: 0 2px 8px rgba(0,0,0,.75); }
+  .hero-contenido h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(1.8rem, 3.4vw, 3rem); font-weight: 500; line-height: 1.15; margin-bottom: 1rem; letter-spacing: -.5px; color: #fff; text-shadow: 0 3px 12px rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.9); }
+  .hero-contenido h2 .destacado { color: #fbbf24; font-weight: 800; text-shadow: 0 3px 15px rgba(251,191,36,.5), 0 2px 6px rgba(0,0,0,.85); }
+  .hero-contenido p { font-size: 1rem; line-height: 1.6; color: #f8fafc; opacity: 1; margin-bottom: 1.6rem; max-width: 520px; text-shadow: 0 2px 8px rgba(0,0,0,.85); font-weight: 500; }
+  .hero-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .85rem 1.8rem; border-radius: 999px; background: #fbbf24; color: #1e3a8a; font-weight: 800; font-size: .82rem; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; border: none; cursor: pointer; transition: transform .2s, box-shadow .2s, background .2s; box-shadow: 0 10px 25px rgba(251,191,36,.5); }
+  .hero-btn:hover { background: #fcd34d; transform: translateY(-3px); box-shadow: 0 14px 32px rgba(251,191,36,.7); }
+  .hero-categorias { position: absolute; top: 20px; left: 5rem; right: 5rem; z-index: 5; display: flex; gap: .5rem; padding: .5rem; background: rgba(15,40,80,.92); backdrop-filter: blur(15px); border-radius: 12px; border: 1px solid rgba(255,255,255,.2); max-width: 720px; box-shadow: 0 8px 25px rgba(0,0,0,.35); }
+  .hero-categorias .categoria { flex: 1; padding: .55rem .8rem; color: #fff; font-size: .78rem; font-weight: 700; letter-spacing: .8px; text-align: center; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; transition: background .2s; }
+  .hero-categorias .categoria:hover { background: rgba(251,191,36,.3); color: #fbbf24; }
+  .hero-categorias .cat-icono { font-size: .95rem; }
+  .hero-flecha { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 90px; background: rgba(15,23,42,.7); color: #fff; border: none; font-size: 2rem; font-weight: 300; cursor: pointer; z-index: 6; backdrop-filter: blur(8px); transition: background .2s, color .2s; display: grid; place-items: center; }
+  .hero-flecha:hover { background: rgba(251,191,36,.95); color: #1e3a8a; }
+  .hero-flecha-izq { left: 0; border-radius: 0 12px 12px 0; }
+  .hero-flecha-der { right: 0; border-radius: 12px 0 0 12px; }
+  .hero-dots { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: .5rem; }
+  .hero-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.35); border: 2px solid rgba(255,255,255,.5); cursor: pointer; transition: all .3s; }
+  .hero-dot.activo { background: #fbbf24; border-color: #fbbf24; transform: scale(1.25); box-shadow: 0 0 15px rgba(251,191,36,.9); }
+
+  .grid-tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.2rem; }
+  .tarjeta-mod { position: relative; overflow: hidden; padding: 1.3rem 1.4rem; border-radius: 20px; color: #fff; display: flex; align-items: center; gap: 1rem; cursor: default; transition: transform .3s cubic-bezier(.2,.9,.3,1.3), box-shadow .3s ease; box-shadow: 0 10px 30px rgba(0,0,0,.15); animation: aparecer .5s ease backwards; }
+  .tarjeta-mod:nth-child(1) { animation-delay: .05s; }
+  .tarjeta-mod:nth-child(2) { animation-delay: .12s; }
+  .tarjeta-mod:nth-child(3) { animation-delay: .19s; }
+  .tarjeta-mod:nth-child(4) { animation-delay: .26s; }
+  .tarjeta-mod:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 20px 45px rgba(0,0,0,.28); }
+  .tarjeta-glow { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.18); top: -50px; right: -40px; filter: blur(20px); transition: transform .4s ease; }
+  .tarjeta-mod:hover .tarjeta-glow { transform: scale(1.4); }
+  .tarjeta-icono-mod { position: relative; z-index: 2; width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center; font-size: 1.9rem; background: rgba(255,255,255,.22); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.35); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); flex-shrink: 0; }
+  .tarjeta-info { position: relative; z-index: 2; flex: 1; text-align: right; }
+  .tarjeta-label { font-size: .72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: .95; margin-bottom: .15rem; text-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .tarjeta-numero { font-size: 2.4rem; font-weight: 800; line-height: 1; letter-spacing: -1px; text-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  .tarjeta-sub { font-size: .68rem; font-weight: 600; opacity: .85; margin-top: .2rem; letter-spacing: .3px; }
+  .tarjeta-azul { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 60%, #60a5fa 100%); }
+  .tarjeta-verde { background: linear-gradient(135deg, #166534 0%, #16a34a 60%, #22c55e 100%); }
+  .tarjeta-violeta { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #a855f7 100%); }
+  .tarjeta-alerta { background: linear-gradient(135deg, #92400e 0%, #d97706 60%, #fbbf24 100%); }
+  .tarjeta-alerta.critico { background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 60%, #ef4444 100%); animation: aparecer .5s ease backwards, alerta-pulso 2s ease-in-out infinite; }
+  .tarjeta-alerta.ok { background: linear-gradient(135deg, #14532d 0%, #16a34a 60%, #4ade80 100%); }
+  @keyframes alerta-pulso { 0%, 100% { box-shadow: 0 10px 30px rgba(220,38,38,.3); } 50% { box-shadow: 0 15px 45px rgba(220,38,38,.75); } }
+  .footer-pagina { text-align: center; color: rgba(255,255,255,.7); font-size: .78rem; margin-top: 1.8rem; letter-spacing: .3px; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  @keyframes aparecer { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes girar { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+  @keyframes girar-rev { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(-360deg); } }
+  @keyframes pulso { 0%, 100% { transform: scale(1); opacity: .8; } 50% { transform: scale(1.15); opacity: 1; } }
+  @keyframes pulso-suave { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  @keyframes orbitar-mini { from { transform: rotate(0deg) translateX(44px) rotate(0deg); } to { transform: rotate(360deg) translateX(44px) rotate(-360deg); } }
+  @keyframes orbitar-mini-rev { from { transform: rotate(0deg) translateX(35px) rotate(0deg); } to { transform: rotate(-360deg) translateX(35px) rotate(360deg); } }
+  @media (max-width: 1100px) {
+    .grid-tarjetas { grid-template-columns: repeat(2, 1fr); }
+    .hero-slide { padding: 0 2rem; }
+    .hero-categorias { left: 2rem; right: 2rem; }
+  }
+  @media (max-width: 700px) {
+    .hero-carrusel { height: 520px; }
+    .hero-slide { padding: 5rem 1.5rem 2rem; align-items: flex-start; }
+    .hero-categorias { left: 1rem; right: 1rem; flex-wrap: wrap; top: 12px; max-width: 100%; }
+    .hero-categorias .categoria { flex: 1 1 40%; font-size: .7rem; }
+    .hero-contenido h2 { font-size: 1.6rem; }
+  }
+  @media (max-width: 600px) {
+    .grid-tarjetas { grid-template-columns: 1fr; }
+    .tarjeta-info { text-align: left; }
+    .hero-flecha { height: 60px; width: 36px; font-size: 1.5rem; }
+  }
+</style>
+
+<script type="module">
+  import { api, protegerPagina, logout, escapeHtml } from './js/api.js';
+  import UI from './js/ui.js';
+  await protegerPagina();
+  logout();
+
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
+
+  function actualizarReloj() {
+    const d = new Date();
+    const texto = `${DIAS[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')} de ${MESES[d.getMonth()]} de ${d.getFullYear()} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    const el = document.getElementById('reloj');
+    if (el) el.textContent = '📅 ' + texto;
+  }
+  setInterval(actualizarReloj, 1000);
+  actualizarReloj();
+
+  const SLIDES = [
+    { img: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=1920&q=80', titulo_1: 'Gestión de', titulo_2: 'Equipos Médicos', desc: 'Administra el inventario de equipos médicos y materiales de la Micro Red de Salud Paucará.', btn: 'Ver Catálogo' },
+    { img: 'https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=1920&q=80', titulo_1: 'Control de', titulo_2: 'Mobiliario Clínico', desc: 'Registra, asigna y controla el mobiliario de consultorios, salas y áreas administrativas.', btn: 'Explorar Bienes' },
+    { img: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1920&q=80', titulo_1: 'Sistema de', titulo_2: 'Actas Digitales', desc: 'Genera, imprime y archiva actas de entrega y devolución de bienes patrimoniales.', btn: 'Ver Actas' },
+    { img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=1920&q=80', titulo_1: 'Inventario', titulo_2: 'Patrimonial 2026', desc: 'Trazabilidad completa de cada bien: ubicación, responsable, condición e historial.', btn: 'Ver Inventario' }
+  ];
+
+  let slideActual = 0;
+  let intervalo = null;
+
+  function renderizarSlides() {
+    const contSlides = document.getElementById('heroSlides');
+    const contDots = document.getElementById('heroDots');
+    contSlides.innerHTML = SLIDES.map((s, i) => `
+      <div class="hero-slide ${i === 0 ? 'activo' : ''}" style="background-image:url('${s.img}');">
+        <div class="hero-contenido">
+          <h2>${escapeHtml(s.titulo_1)} <span class="destacado">${escapeHtml(s.titulo_2)}</span></h2>
+          <p>${escapeHtml(s.desc)}</p>
+          <button class="hero-btn" data-ir="${i}">${escapeHtml(s.btn)} <span style="font-size:1.1rem;">›</span></button>
+        </div>
+      </div>`).join('');
+    contDots.innerHTML = SLIDES.map((_, i) => `<span class="hero-dot ${i === 0 ? 'activo' : ''}" data-dot="${i}"></span>`).join('');
+    contDots.querySelectorAll('.hero-dot').forEach(dot => dot.addEventListener('click', () => irASlide(Number(dot.dataset.dot))));
+    contSlides.querySelectorAll('.hero-btn').forEach(btn => btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.ir);
+      if (idx === 2) location.href = 'actas.html';
+      else location.href = 'bienes.html';
+    }));
+  }
+
+  function irASlide(idx) {
+    const slides = document.querySelectorAll('.hero-slide');
+    const dots = document.querySelectorAll('.hero-dot');
+    if (slides.length === 0) return;
+    slides[slideActual].classList.remove('activo');
+    dots[slideActual]?.classList.remove('activo');
+    slideActual = (idx + slides.length) % slides.length;
+    slides[slideActual].classList.add('activo');
+    dots[slideActual]?.classList.add('activo');
+  }
+
+  function siguienteSlide() { irASlide(slideActual + 1); }
+  function anteriorSlide() { irASlide(slideActual - 1); }
+  function iniciarAutoRotacion() { clearInterval(intervalo); intervalo = setInterval(siguienteSlide, 6000); }
+
+  renderizarSlides();
+  iniciarAutoRotacion();
+  document.getElementById('btnNext').addEventListener('click', () => { siguienteSlide(); iniciarAutoRotacion(); });
+  document.getElementById('btnPrev').addEventListener('click', () => { anteriorSlide(); iniciarAutoRotacion(); });
+
+  async function cargarStats() {
+    try {
+      const s = await api('/api/dashboard/stats');
+      animarNumero('tBienes', s.totales.bienes);
+      animarNumero('tProf', s.totales.profesionales);
+      animarNumero('tVencer', s.totales.porVencer);
+      animarNumero('tResp', s.totales.responsables);
+
+      const tarjeta = document.getElementById('tarjetaVencer');
+      const sub = document.getElementById('tVencerSub');
+      if (s.totales.vencidos > 0) {
+        tarjeta.classList.add('critico');
+        sub.innerHTML = `⚠️ ${s.totales.vencidos} VENCIDO(S) · ≤ 25 días`;
+      } else if (s.totales.porVencer > 0) {
+        tarjeta.classList.remove('critico');
+        sub.textContent = 'Mantenimiento ≤ 25 días';
+      } else {
+        tarjeta.classList.add('ok');
+        sub.textContent = '✓ Todo al día';
+      }
+    } catch (err) { console.error(err); }
+  }
+
+  function animarNumero(id, objetivo) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const duracion = 700;
+    const inicio = performance.now();
+    const desde = 0;
+    function paso(ahora) {
+      const t = Math.min((ahora - inicio) / duracion, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(desde + (objetivo - desde) * ease);
+      if (t < 1) requestAnimationFrame(paso);
+      else el.textContent = objetivo;
+    }
+    requestAnimationFrame(paso);
+  }
+
+  await cargarStats();
+  setInterval(cargarStats, 30000);
+</script>
+</body>
+</html>

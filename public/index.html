@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Patrimonio · Micro Red Paucará</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="login-body">
+
+  <!-- Fondo con temática de salud -->
+  <div class="fondo-salud"></div>
+  <div class="fondo-overlay"></div>
+
+  <!-- Efectos decorativos flotantes (cruces y corazones) -->
+  <div class="decor decor-1">✚</div>
+  <div class="decor decor-2">♥</div>
+  <div class="decor decor-3">✚</div>
+  <div class="decor decor-4">♥</div>
+  <div class="decor decor-5">✚</div>
+
+  <!-- Layout principal: 2 columnas -->
+  <main class="login-layout">
+
+    <!-- Columna izquierda: Info institucional -->
+    <section class="login-info">
+      <div class="info-marca">
+        <span class="badge-pill">✚ Sistema Institucional</span>
+        <h1 class="info-titulo">
+          Control de <span class="texto-destacado">Patrimonio</span><br>
+          Bienes de la Micro Red
+        </h1>
+        <p class="info-desc">
+          Plataforma oficial para la gestión, inventario y trazabilidad
+          de los bienes patrimoniales de la <strong>Micro Red de Salud Paucará</strong> —
+          Red de Salud Acobamba.
+        </p>
+
+        <div class="info-cards">
+          <div class="info-card">
+            <div class="info-card-icon">📦</div>
+            <div>
+              <div class="info-card-title">Inventario 2026</div>
+              <div class="info-card-sub">Control total de bienes</div>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-icon">📄</div>
+            <div>
+              <div class="info-card-title">Actas digitales</div>
+              <div class="info-card-sub">Entrega y recepción</div>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-icon">👥</div>
+            <div>
+              <div class="info-card-title">Profesionales</div>
+              <div class="info-card-sub">Registro y asignación</div>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-icon">🔒</div>
+            <div>
+              <div class="info-card-title">Seguro</div>
+              <div class="info-card-sub">Sesiones cifradas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Columna derecha: Login con logo girando -->
+    <section class="login-panel">
+      <div class="glass login-card2">
+
+        <!-- Logo giratorio -->
+        <div class="logo-wrap">
+          <div class="logo-anillo-exterior"></div>
+          <div class="logo-anillo-medio"></div>
+          <img src="img/logo.png" alt="Micro Red Paucará" class="logo-img"
+               onerror="this.style.display='none'; this.parentElement.classList.add('sin-logo');">
+          <div class="logo-fallback">✚</div>
+        </div>
+
+        <h2 class="login-titulo">Iniciar Sesión</h2>
+        <p class="login-sub">Sistema de Control de Patrimonio</p>
+
+        <form id="loginForm" class="login-form2">
+          <div class="field">
+            <label for="username">Usuario</label>
+            <div class="input-icon">
+              <span class="icono">👤</span>
+              <input id="username" name="username" required autocomplete="username"
+                     placeholder="Ingresa tu usuario" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <div class="input-icon">
+              <span class="icono">🔒</span>
+              <input id="password" type="password" name="password" required
+                     autocomplete="current-password" placeholder="Ingresa tu contraseña" />
+              <button type="button" id="togglePwd" class="ojo" title="Mostrar/ocultar">👁️</button>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full" type="submit" id="btnLogin">
+            <span id="btnTxt">INGRESAR</span>
+          </button>
+
+          <p id="msg" class="login-msg"></p>
+
+          <div class="login-foot">
+            <span class="dot-seguro"></span>
+            Conexión segura · JWT + bcrypt
+          </div>
+        </form>
+      </div>
+
+      <p class="copyright">
+        © 2026 Micro Red de Salud Paucará · Red de Salud Acobamba
+      </p>
+    </section>
+
+  </main>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const msg  = document.getElementById('msg');
+    const btn  = document.getElementById('btnLogin');
+    const txt  = document.getElementById('btnTxt');
+
+    // Toggle mostrar contraseña
+    document.getElementById('togglePwd').addEventListener('click', () => {
+      const p = document.getElementById('password');
+      p.type = p.type === 'password' ? 'text' : 'password';
+    });
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      msg.textContent = '';
+      msg.className = 'login-msg';
+      btn.disabled = true;
+      txt.textContent = 'VERIFICANDO...';
+
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            username: document.getElementById('username').value.trim(),
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          msg.textContent = '⚠️ ' + (data.error || 'Error desconocido');
+          msg.classList.add('error');
+          btn.disabled = false;
+          txt.textContent = 'INGRESAR';
+          return;
+        }
+        msg.textContent = '✅ Bienvenido, redirigiendo...';
+        msg.classList.add('ok');
+        setTimeout(() => location.href = '/dashboard.html', 400);
+      } catch (err) {
+        msg.textContent = '⚠️ Error de conexión';
+        msg.classList.add('error');
+        btn.disabled = false;
+        txt.textContent = 'INGRESAR';
+      }
+    });
+  </script>
+</body>
+</html>
