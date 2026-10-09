@@ -49,21 +49,38 @@ app.post('/api/login', loginLimiter, async (req, res) => {
   if (!username || !password)
     return res.status(400).json({ error: 'Datos incompletos' });
 
-  const u = await db.prepare(`
+  const user = await db.prepare(`
     SELECT u.*, e.nombre AS establecimiento_nombre
     FROM usuarios u
     LEFT JOIN establecimientos e ON e.id = u.establecimiento_id
     WHERE u.username = ? AND u.activo = 1
   `).get(username);
 
-  if (!u || !bcrypt.compareSync(password, u.password_hash))
+  // ===== DIAGNÓSTICO TEMPORAL =====
+  console.log('=== DIAGNOSTICO LOGIN ===');
+  console.log('User encontrado:', user ? 'SI' : 'NO');
+  console.log('Username:', user?.username);
+  console.log('Activo:', user?.activo);
+  console.log('Tipo hash:', typeof user?.password_hash);
+  console.log('Hash:', user?.password_hash);
+  if (user?.password_hash) {
+    const hashStr = typeof user.password_hash === 'string'
+      ? user.password_hash
+      : Buffer.from(user.password_hash).toString('utf8');
+    console.log('Hash string:', hashStr);
+    console.log('compareSync:', bcrypt.compareSync(password, hashStr));
+  }
+  console.log('=========================');
+  // ===== FIN DIAGNÓSTICO =====
+
+  if (!user || !bcrypt.compareSync(password, user.password_hash))
     return res.status(401).json({ error: 'Credenciales inválidas' });
 
   const token = jwt.sign(
     {
-      id: u.id, username: u.username, rol: u.rol, nombre: u.nombre_completo,
-      establecimiento_id: u.establecimiento_id,
-      establecimiento_nombre: u.establecimiento_nombre
+      id: user.id, username: user.username, rol: user.rol, nombre: user.nombre_completo,
+      establecimiento_id: user.establecimiento_id,
+      establecimiento_nombre: user.establecimiento_nombre
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES || '8h' }
@@ -78,9 +95,9 @@ app.post('/api/login', loginLimiter, async (req, res) => {
   res.json({
     ok: true,
     user: {
-      nombre: u.nombre_completo, rol: u.rol,
-      establecimiento_id: u.establecimiento_id,
-      establecimiento_nombre: u.establecimiento_nombre
+      nombre: user.nombre_completo, rol: user.rol,
+      establecimiento_id: user.establecimiento_id,
+      establecimiento_nombre: user.establecimiento_nombre
     }
   });
 });
