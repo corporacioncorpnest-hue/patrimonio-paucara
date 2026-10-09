@@ -56,6 +56,35 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     WHERE u.username = ? AND u.activo = 1
   `).get(username);
 
+  const u = await db.prepare(`
+    SELECT u.*, e.nombre AS establecimiento_nombre
+    FROM usuarios u
+    LEFT JOIN establecimientos e ON e.id = u.establecimiento_id
+    WHERE u.username = ? AND u.activo = 1
+  `).get(username);
+
+  // ⬇️ AGREGA ESTAS LÍNEAS TEMPORALES DE DIAGNÓSTICO ⬇️
+  console.log('=== DIAGNÓSTICO LOGIN ===');
+  console.log('Usuario encontrado:', u ? 'SÍ' : 'NO');
+  console.log('Username:', u?.username);
+  console.log('Activo:', u?.activo);
+  console.log('Hash en BD:', u?.password_hash);
+  console.log('Tipo del hash:', typeof u?.password_hash);
+  if (u?.password_hash) {
+    const hashStr = typeof u.password_hash === 'string' 
+      ? u.password_hash 
+      : Buffer.from(u.password_hash).toString('utf8');
+    console.log('Hash como string:', hashStr);
+    console.log('Resultado compareSync:', bcrypt.compareSync(password, hashStr));
+  }
+  console.log('========================');
+  // ⬆️ FIN DE LÍNEAS TEMPORALES ⬆️
+
+  if (!u || !bcrypt.compareSync(password, u.password_hash))
+    return res.status(401).json({ error: 'Credenciales inválidas' });
+
+  
+
   if (!u || !bcrypt.compareSync(password, u.password_hash))
     return res.status(401).json({ error: 'Credenciales inválidas' });
 
