@@ -56,24 +56,26 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     WHERE u.username = ? AND u.activo = 1
   `).get(username);
 
-  // ===== DIAGNÓSTICO TEMPORAL =====
-  console.log('=== DIAGNOSTICO LOGIN ===');
-  console.log('User encontrado:', user ? 'SI' : 'NO');
-  console.log('Username:', user?.username);
-  console.log('Activo:', user?.activo);
-  console.log('Tipo hash:', typeof user?.password_hash);
-  console.log('Hash:', user?.password_hash);
-  if (user?.password_hash) {
-    const hashStr = typeof user.password_hash === 'string'
-      ? user.password_hash
-      : Buffer.from(user.password_hash).toString('utf8');
-    console.log('Hash string:', hashStr);
-    console.log('compareSync:', bcrypt.compareSync(password, hashStr));
+  if (!user) {
+    console.log('LOGIN: usuario no encontrado:', username);
+    return res.status(401).json({ error: 'Credenciales inválidas' });
   }
-  console.log('=========================');
-  // ===== FIN DIAGNÓSTICO =====
 
-  if (!user || !bcrypt.compareSync(password, user.password_hash))
+  // Convertir el hash a string (por si llega como Uint8Array desde Turso)
+  let hashStr = user.password_hash;
+  if (hashStr && typeof hashStr !== 'string') {
+    try {
+      hashStr = Buffer.from(hashStr).toString('utf8');
+    } catch (e) {
+      console.log('LOGIN: error convirtiendo hash:', e.message);
+    }
+  }
+
+  console.log('LOGIN: hash tipo:', typeof hashStr, 'longitud:', hashStr?.length);
+  const valido = bcrypt.compareSync(password, hashStr);
+  console.log('LOGIN: compareSync:', valido);
+
+  if (!valido)
     return res.status(401).json({ error: 'Credenciales inválidas' });
 
   const token = jwt.sign(
