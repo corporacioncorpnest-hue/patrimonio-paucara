@@ -15,6 +15,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 /* ============================================================
+   CONFIGURACIÓN PARA RENDER (PROXY)
+   ============================================================ */
+// Confía en el proxy de Render para detectar IPs reales
+app.set('trust proxy', 1);
+
+/* ============================================================
    SEGURIDAD GLOBAL
    ============================================================ */
 app.use(helmet({
@@ -34,47 +40,6 @@ app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500 }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
-
-/* ============================================================
-   ENDPOINT TEMPORAL PARA CREAR ADMIN (ELIMINAR DESPUÉS)
-   ============================================================ */
-app.get('/api/setup-admin', async (req, res) => {
-  try {
-    const hash = bcrypt.hashSync('admin123', 10);
-    console.log('SETUP: hash generado:', hash);
-    console.log('SETUP: longitud del hash:', hash.length);
-
-    // Borrar el admin existente (si hay)
-    await db.prepare('DELETE FROM usuarios WHERE username = ?').run('admin');
-    console.log('SETUP: admin anterior eliminado');
-
-    // Crear nuevo admin
-    const info = await db.prepare(`
-      INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo)
-      VALUES (?, ?, ?, ?, ?)
-    `).run('admin', hash, 'Administrador del Sistema', 'admin', 1);
-
-    console.log('SETUP: nuevo admin creado con id', info.lastInsertRowid);
-
-    // Verificar que funciona
-    const user = await db.prepare(
-      'SELECT username, password_hash, LENGTH(password_hash) AS len FROM usuarios WHERE username = ?'
-    ).get('admin');
-    const valido = bcrypt.compareSync('admin123', user.password_hash);
-
-    res.json({
-      ok: true,
-      usuario: user.username,
-      longitud: user.len,
-      hash: user.password_hash,
-      compareSync: valido,
-      id: info.lastInsertRowid
-    });
-  } catch (err) {
-    console.error('SETUP ERROR:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 /* ============================================================
    AUTENTICACIÓN
